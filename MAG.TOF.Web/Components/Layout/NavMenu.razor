@@ -4,35 +4,63 @@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">MAG.TOF.Web</a>
+        <div class="brand-container">
+            <span class="brand-icon">⚡</span>
+            <span class="brand-text">MAG.TOF HR</span>
+        </div>
     </div>
 </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <div class="new-request-container">
+        <button class="btn-new-request">
+            <span class="plus-icon">+</span> New Request
+        </button>
+    </div>
+
     <nav class="nav flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Dashboard
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3 nav-item-collapsible">
+            <button class="nav-link nav-link-expandable" @onclick="ToggleRequestsMenu">
+                <span class="bi bi-file-text-nav-menu" aria-hidden="true"></span> 
+                <span>Requests</span>
+                <span class="expand-icon @(requestsExpanded ? "expanded" : "")">›</span>
+            </button>
+            @if (requestsExpanded)
+            {
+                <div class="sub-menu">
+                    <NavLink class="nav-link sub-link" href="requests/my">
+                        My Requests
+                    </NavLink>
+                    <NavLink class="nav-link sub-link" href="requests/team">
+                        Team Requests
+                    </NavLink>
+                </div>
+            }
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="calendar">
+                <span class="bi bi-calendar-nav-menu" aria-hidden="true"></span> Calendar
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            <NavLink class="nav-link" href="reports">
+                <span class="bi bi-graph-nav-menu" aria-hidden="true"></span> Reports
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="auth">
-                <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Auth Required
+            <NavLink class="nav-link" href="settings">
+                <span class="bi bi-gear-nav-menu" aria-hidden="true"></span> Settings
             </NavLink>
         </div>
 
@@ -71,6 +99,7 @@
 
 @code {
     private string? currentUrl;
+    private bool requestsExpanded = false;
 
     protected override void OnInitialized()
     {
@@ -82,6 +111,11 @@
     {
         currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
         StateHasChanged();
+    }
+
+    private void ToggleRequestsMenu()
+    {
+        requestsExpanded = !requestsExpanded;
     }
 
     public void Dispose()
