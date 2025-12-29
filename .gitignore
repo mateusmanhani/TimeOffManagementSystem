@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/MAG.TOF/.vs/MAG.slnx/v18
+/MAG.TOF/MAG.TOF.Web/bin/Debug/net10.0
+/MAG.TOF/MAG.TOF.Web/obj
+/MAG.TOF/.vs/MAG.TOF.slnx
