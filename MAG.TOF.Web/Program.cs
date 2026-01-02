@@ -1,4 +1,6 @@
+using MAG.TOF.Application.Interfaces;
 using MAG.TOF.Infrastructure.Data;
+using MAG.TOF.Infrastructure.Repositories;
 using MAG.TOF.Web.Components;
 using MAG.TOF.Web.Components.Account;
 using MAG.TOF.Web.Data;
@@ -47,6 +49,9 @@ try
     // Register TofDbContext (for business domain)
     builder.Services.AddDbContext<TofDbContext>(options =>
         options.UseSqlServer(connectionString));
+
+    // Register Repository
+    builder.Services.AddScoped<ITofRepository, TofRepository>();
 
     builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 

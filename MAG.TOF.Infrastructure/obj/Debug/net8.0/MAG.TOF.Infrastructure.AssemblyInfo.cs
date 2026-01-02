@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MAG.TOF.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9d44e4cf09bcf635de619a5ef79b6b1bc9ca23b3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+de8f52099bb520a0d1f0b9591609f6d570676c01")]
 [assembly: System.Reflection.AssemblyProductAttribute("MAG.TOF.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MAG.TOF.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
