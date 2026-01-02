@@ -53,6 +53,11 @@ try
     // Register Repository
     builder.Services.AddScoped<ITofRepository, TofRepository>();
 
+    // Register MediatR
+    builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly
+    (typeof(MAG.TOF.Application.Commands.CreateRequestCommand).Assembly));
+    
+
     builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
     builder.Services.AddIdentityCore<ApplicationUser>(options =>

@@ -1,0 +1,166 @@
+﻿@page "/requests/create"
+@rendermode InteractiveServer
+@using MediatR
+@using MAG.TOF.Application.Commands
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+@inject ILogger<CreateRequest> Logger
+
+<PageTitle>Create Time Off Request</PageTitle>
+
+<h3>Create New Time Off Request</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success" role="alert">
+        @successMessage
+    </div>
+}
+
+<EditForm Model="@model" OnValidSubmit="HandleSubmit" FormName="createRequest">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">User ID</label>
+        <InputNumber @bind-Value="model.UserId" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Department ID</label>
+        <InputNumber @bind-Value="model.DepartmentId" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Start Date</label>
+        <InputDate @bind-Value="model.StartDate" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">End Date</label>
+        <InputDate @bind-Value="model.EndDate" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Total Business Days</label>
+        <InputNumber @bind-Value="model.TotalBusinessDays" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Manager ID</label>
+        <InputNumber @bind-Value="model.ManagerId" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Manager Comment (Optional)</label>
+        <InputText @bind-Value="model.ManagerComment" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Status ID</label>
+        <InputNumber @bind-Value="model.StatusId" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+        @if (isSubmitting)
+        {
+            <span>Creating...</span>
+        }
+        else
+        {
+            <span>Create Request</span>
+        }
+    </button>
+</EditForm>
+
+@code {
+    private RequestFormModel model = new();
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isSubmitting = false;
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            Logger.LogDebug("Submitting create request form");
+
+            // Step 1: Create the command from the form model
+            var command = new CreateRequestCommand(
+                UserId: model.UserId,
+                DepartmentId: model.DepartmentId,
+                StartDate: model.StartDate,
+                EndDate: model.EndDate,
+                TotalBusinessDays: model.TotalBusinessDays,
+                ManagerId: model.ManagerId,
+                ManagerComment: model.ManagerComment,
+                StatusId: model.StatusId
+            );
+
+            // Step 2: Send the command through MediatR
+            // MediatR will automatically route it to CreateRequestHandler
+            var result = await Mediator.Send(command);
+
+            // Step 3: Handle the result (success or errors)
+            result.Match(
+                // Success case - we get the created request ID
+                requestId =>
+                {
+                    Logger.LogInformation("Request created successfully with Id: {RequestId}", requestId);
+                    successMessage = $"Request created successfully! ID: {requestId}";
+
+                    // Option 1: Navigate to view the created request
+                    // Navigation.NavigateTo($"/requests/{requestId}");
+
+                    // Option 2: Clear form for another entry
+                    model = new RequestFormModel();
+
+                    return requestId;
+                },
+                // Error case - we get a list of errors
+                errors =>
+                {
+                    Logger.LogWarning("Failed to create request: {Errors}",
+                        string.Join(", ", errors.Select(e => e.Description)));
+
+                    errorMessage = string.Join(", ", errors.Select(e => e.Description));
+
+                    return 0;
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error during request creation");
+            errorMessage = "An unexpected error occurred. Please try again.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    // Form model for binding
+    private class RequestFormModel
+    {
+        public int UserId { get; set; }
+        public int DepartmentId { get; set; }
+        public DateTime StartDate { get; set; } = DateTime.Today;
+        public DateTime EndDate { get; set; } = DateTime.Today.AddDays(1);
+        public int TotalBusinessDays { get; set; } = 1;
+        public int ManagerId { get; set; }
+        public string? ManagerComment { get; set; }
+        public int StatusId { get; set; } = 1; // Default to "Pending" or whatever your default is
+    }
+}

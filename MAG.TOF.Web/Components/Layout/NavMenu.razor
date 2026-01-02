@@ -14,10 +14,13 @@
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <div class="new-request-container">
-        <button class="btn-new-request">
+    <div class="new-request-container" onclick="event.stopPropagation()">
+        @* <button class="btn-new-request">
             <span class="plus-icon">+</span> New Request
-        </button>
+        </button> *@
+        <a href="/requests/create" class="btn-new-request">
+            <span class="plus-icon">+</span> New Request
+        </a>
     </div>
 
     <nav class="nav flex-column">
@@ -117,6 +120,11 @@
     {
         requestsExpanded = !requestsExpanded;
     }
+
+    // private void NavigateToCreateRequest()
+    // {
+    //     NavigationManager.NavigateTo("requests/create");
+    // }
 
     public void Dispose()
     {

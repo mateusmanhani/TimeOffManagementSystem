@@ -50,7 +50,7 @@ CREATE TABLE RequestLogs(
 	Id INT IDENTITY(1,1) NOT NULL,
 	RequestId INT NULL,
 	LogDate DATETIME NOT NULL DEFAULT GETDATE(),
-	LogLeverl NVARCHAR(50) NOT NULL,
+	LogLevel NVARCHAR(50) NOT NULL,
 	LogMessage NVARCHAR(MAX) NULL,
 	LogException NVARCHAR(MAX) NULL, -- Stores the stack trace if there's a crash
     Logger NVARCHAR(255) NULL,       -- Stores which class/controller sent the log
@@ -62,3 +62,5 @@ GO
 -- Index for fast lookups when you want to see "The Story" of a specific request
 CREATE NONCLUSTERED INDEX IX_RequestLogs_RequestId ON RequestLogs(RequestId);
 GO
+
+EXEC sp_rename 'RequestLogs.LogLeverl', 'LogLevel', 'COLUMN';

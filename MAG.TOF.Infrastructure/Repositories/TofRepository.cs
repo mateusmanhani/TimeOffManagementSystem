@@ -2,6 +2,7 @@
 using MAG.TOF.Domain.Entities;
 using MAG.TOF.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
