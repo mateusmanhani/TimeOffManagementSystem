@@ -1,3 +1,4 @@
+using MAG.TOF.Infrastructure.Data;
 using MAG.TOF.Web.Components;
 using MAG.TOF.Web.Components.Account;
 using MAG.TOF.Web.Data;
@@ -7,20 +8,18 @@ using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
 
-// Initialize Nlog Early to catch startup errors
+// Initialize NLog early to catch startup errors
 var logger = LogManager.Setup()
     .LoadConfigurationFromFile("nlog.config")
     .GetCurrentClassLogger();
 
-logger.Info("=== Application Starting Up ===");
-logger.Debug("This is a debug message");
-logger.Warn("This is a warning message");
+logger.Info("Application starting up");
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
 
-    // Nlog: Setup Nlog for Dependency injection
+    // NLog: Setup NLog for Dependency Injection
     builder.Logging.ClearProviders();
     builder.Host.UseNLog();
 
@@ -40,8 +39,15 @@ try
         .AddIdentityCookies();
 
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+    
+    // Register ApplicationDbContext (for Identity)
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseSqlServer(connectionString));
+    
+    // Register TofDbContext (for business domain)
+    builder.Services.AddDbContext<TofDbContext>(options =>
+        options.UseSqlServer(connectionString));
+
     builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
     builder.Services.AddIdentityCore<ApplicationUser>(options =>
@@ -80,18 +86,19 @@ try
     // Add additional endpoints required by the Identity /Account Razor components.
     app.MapAdditionalIdentityEndpoints();
 
-    logger.Info("Application started successfully)");
+    logger.Info("Application started successfully");
 
     app.Run();
 }
 catch (Exception ex)
 {
-    // catch setup errors
-    logger.Error(ex, "Application stopped because of exception");
+    // NLog: catch setup errors
+    logger.Error(ex, "Application failed to start");
     throw;
-} 
+}
 finally
 {
-    // ensure to flush and stop internal threads
+    // Ensure to flush and stop internal timers/threads before application-exit
+    logger.Info("Application shutting down");
     LogManager.Shutdown();
 }

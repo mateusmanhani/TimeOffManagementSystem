@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MAG.TOF.Application\MAG.TOF.Application.csproj" />
+    <ProjectReference Include="..\MAG.TOF.Infrastructure\MAG.TOF.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
