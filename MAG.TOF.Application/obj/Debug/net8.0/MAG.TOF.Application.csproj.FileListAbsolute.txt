@@ -1,0 +1,16 @@
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\obj\Debug\net8.0\MAG.TOF.Application.csproj.AssemblyReference.cache
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\obj\Debug\net8.0\MAG.TOF.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\obj\Debug\net8.0\MAG.TOF.Application.AssemblyInfoInputs.cache
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\obj\Debug\net8.0\MAG.TOF.Application.AssemblyInfo.cs
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\obj\Debug\net8.0\MAG.TOF.Application.csproj.CoreCompileInputs.cache
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\obj\Debug\net8.0\MAG.TOF.Application.sourcelink.json
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\bin\Debug\net8.0\MAG.TOF.Application.deps.json
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\bin\Debug\net8.0\MAG.TOF.Application.dll
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\bin\Debug\net8.0\MAG.TOF.Application.pdb
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\bin\Debug\net8.0\MAG.TOF.Domain.dll
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\bin\Debug\net8.0\MAG.TOF.Domain.pdb
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\obj\Debug\net8.0\MAG.TOF..8ACFAFA0.Up2Date
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\obj\Debug\net8.0\MAG.TOF.Application.dll
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\obj\Debug\net8.0\refint\MAG.TOF.Application.dll
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\obj\Debug\net8.0\MAG.TOF.Application.pdb
+C:\Users\mateu\OneDrive\Desktop\Maggeiro\MAG.TOF\MAG.TOF.Application\obj\Debug\net8.0\ref\MAG.TOF.Application.dll
