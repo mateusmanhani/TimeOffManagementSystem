@@ -61,5 +61,16 @@ namespace MAG.TOF.Infrastructure.Repositories
             _context.Requests.Update(request);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<Request?> HasOverlappingRequestsAsync(int usrId, DateTime startDate, DateTime endDate)
+        {
+            // Find the first overlapping request for this user
+            return await _context.Requests
+                .Where(r => r.UserId == usrId &&
+                               r.StartDate <= endDate &&
+                               r.EndDate >= startDate)
+                .OrderBy(r => r.StartDate) // Get earliest overlapping request
+                .FirstOrDefaultAsync();
+        }
     }
 }

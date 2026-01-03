@@ -2,6 +2,7 @@
 using MAG.TOF.Application.Commands;
 using MAG.TOF.Application.Interfaces;
 using MAG.TOF.Domain.Entities;
+using MAG.TOF.Domain.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System;
@@ -17,11 +18,13 @@ namespace MAG.TOF.Application.Handlers
 
         private readonly ITofRepository _repository;
         private readonly ILogger _logger;
+        private readonly BusinessDaysCalculator _businessDaysCalculator;
 
-        public CreateRequestHandler(ITofRepository repository, ILogger<CreateRequestHandler> logger)
+        public CreateRequestHandler(ITofRepository repository, ILogger<CreateRequestHandler> logger, BusinessDaysCalculator businessDaysCaluclator)
         {
             _repository = repository;
             _logger = logger;
+            _businessDaysCalculator = businessDaysCaluclator;
         }
 
         public async Task<ErrorOr<int>> Handle(CreateRequestCommand command, CancellationToken cancellationToken)
@@ -31,17 +34,46 @@ namespace MAG.TOF.Application.Handlers
                 _logger.LogDebug("Creating request for UserId: {UserId}", command.UserId);
 
                 // validate request
-                if (command.EndDate < command.StartDate)
+                if (!_businessDaysCalculator.isValidDateRange(command.StartDate, command.EndDate))
                 {
-                    _logger.LogWarning("EndDate {EndDate} is earlier than StartDate {StartDate} for UserId: {UserId}"
-                        , command.EndDate, command.StartDate, command.UserId);
-                    return Error.Validation("Request.InvalidDateRange","Start date must be before end date");
+                    _logger.LogWarning("Invalid date range: StartDate: {StartDate}, EndDate: {EndDate}",
+                        command.StartDate, command.EndDate);
+                    return Error.Validation("Request.InvalidDateRange",
+                        "Start date must be today or in the future, and end date must be after start date");
                 }
 
-                if (command.TotalBusinessDays <= 0)
+                //  check for overlapping requests
+                var overLappingRequest = await _repository.HasOverlappingRequestsAsync(
+                    command.UserId,
+                    command.StartDate,
+                    command.EndDate);
+
+                if (overLappingRequest != null)
                 {
-                    _logger.LogWarning("Invalid business days: {TotalBusinessDays}", command.TotalBusinessDays);
-                    return Error.Validation("Request.InvalidBusinessDays", "Total business days must be greater than 0");
+                    var overlapMessage = _businessDaysCalculator.FormatOverlapMessage(
+                        overLappingRequest.Id,
+                        overLappingRequest.StartDate,
+                        overLappingRequest.EndDate);
+
+                    _logger.LogWarning("Date overlap detected for UserId: {UserId}. {Message}",
+                        command.UserId, overlapMessage);
+
+                    return Error.Conflict("Request.DateOverlap", overlapMessage);
+                }
+
+                // Calculate business days
+                int actualBusinessDays = _businessDaysCalculator.CalculateBusinessDays(
+                    command.StartDate,
+                    command.EndDate);
+
+                _logger.LogDebug("Calculates {BusinessDays} business days for date range {StartDate_ to {EndDate}",
+                    actualBusinessDays, command.StartDate, command.EndDate);
+
+                //Validate minimum business days
+                if (actualBusinessDays <= 0)
+                {
+                    _logger.LogWarning("No businesss days in selected range");
+                    return Error.Validation("Request.NoBusinessDays", "Total business days must be greater than 0");
                 }
 
                 // Map command to entity
@@ -51,9 +83,8 @@ namespace MAG.TOF.Application.Handlers
                     DepartmentId = command.DepartmentId,
                     StartDate = command.StartDate,
                     EndDate = command.EndDate,
-                    TotalBusinessDays = command.TotalBusinessDays,
+                    TotalBusinessDays = actualBusinessDays,
                     ManagerId = command.ManagerId,
-                    ManagerComment = command.ManagerComment,
                     StatusId = command.StatusId
                 };
 

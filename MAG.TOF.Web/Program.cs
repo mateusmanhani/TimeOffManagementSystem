@@ -1,11 +1,15 @@
+using MAG.TOF.Application.Commands;
 using MAG.TOF.Application.Interfaces;
+using MAG.TOF.Domain.Services;
 using MAG.TOF.Infrastructure.Data;
 using MAG.TOF.Infrastructure.Repositories;
 using MAG.TOF.Web.Components;
 using MAG.TOF.Web.Components.Account;
 using MAG.TOF.Web.Data;
+using MediatR;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
@@ -53,10 +57,13 @@ try
     // Register Repository
     builder.Services.AddScoped<ITofRepository, TofRepository>();
 
+    //  Register Domain Services
+    builder.Services.AddScoped<BusinessDaysCalculator>();
+
     // Register MediatR
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly
     (typeof(MAG.TOF.Application.Commands.CreateRequestCommand).Assembly));
-    
+
 
     builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -95,6 +102,21 @@ try
 
     // Add additional endpoints required by the Identity /Account Razor components.
     app.MapAdditionalIdentityEndpoints();
+
+    // Create testing endpoints - Disable antiforgery for testing
+    app.MapPost("/api/test/create-request", async (
+        CreateRequestCommand command,
+        IMediator mediator) =>
+    {
+        var result = await mediator.Send(command);
+
+        return result.Match(
+            id => Results.Ok(new { RequestId = id }),
+            errors => Results.BadRequest(new { Errors = errors })
+            );
+    })
+    .DisableAntiforgery(); // Add this to disable antiforgery validation for testing
+
 
     logger.Info("Application started successfully");
 

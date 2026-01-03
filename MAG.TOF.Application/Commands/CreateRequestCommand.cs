@@ -14,9 +14,7 @@ namespace MAG.TOF.Application.Commands
         int DepartmentId,
         DateTime StartDate,
         DateTime EndDate,
-        int TotalBusinessDays,
         int ManagerId,
-        string? ManagerComment,
         int StatusId // default 1(draft) or 2(pending)? 
         ) : IRequest<ErrorOr<int>>;
 
