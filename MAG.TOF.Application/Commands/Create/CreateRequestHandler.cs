@@ -1,5 +1,4 @@
 ﻿using ErrorOr;
-using MAG.TOF.Application.Commands;
 using MAG.TOF.Application.Interfaces;
 using MAG.TOF.Domain.Entities;
 using MAG.TOF.Domain.Services;
@@ -11,13 +10,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MAG.TOF.Application.Handlers
+namespace MAG.TOF.Application.Commands.Create
 {
     public class CreateRequestHandler : IRequestHandler<CreateRequestCommand, ErrorOr<int>>
     {
 
         private readonly ITofRepository _repository;
-        private readonly ILogger _logger;
+        private readonly ILogger<CreateRequestHandler> _logger;
         private readonly BusinessDaysCalculator _businessDaysCalculator;
 
         public CreateRequestHandler(ITofRepository repository, ILogger<CreateRequestHandler> logger, BusinessDaysCalculator businessDaysCaluclator)

@@ -1,5 +1,6 @@
-using MAG.TOF.Application.Commands;
+using MAG.TOF.Application.Commands.Create;
 using MAG.TOF.Application.Interfaces;
+using MAG.TOF.Application.Queries.GetUserRequests;
 using MAG.TOF.Domain.Services;
 using MAG.TOF.Infrastructure.Data;
 using MAG.TOF.Infrastructure.Repositories;
@@ -62,7 +63,7 @@ try
 
     // Register MediatR
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly
-    (typeof(MAG.TOF.Application.Commands.CreateRequestCommand).Assembly));
+    (typeof(CreateRequestCommand).Assembly));
 
 
     builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -115,7 +116,21 @@ try
             errors => Results.BadRequest(new { Errors = errors })
             );
     })
-    .DisableAntiforgery(); // Add this to disable antiforgery validation for testing
+    .DisableAntiforgery(); // disable antiforgery validation for testing
+
+    // Test endpoint to getRequests by UserId
+    app.MapGet("/api/test/get-requests-by-user/{userId}", async (
+        int userId,
+        IMediator mediator) =>
+    {
+        var query = new GetRequestsByUserQuery(userId);
+        var result = await mediator.Send(query);
+
+        return result.Match(
+            requests => Results.Ok(requests),
+            errors => Results.BadRequest(new { Errors = errors })
+            );
+    }).DisableAntiforgery();
 
 
     logger.Info("Application started successfully");

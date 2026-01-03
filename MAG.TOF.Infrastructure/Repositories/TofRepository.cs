@@ -72,5 +72,13 @@ namespace MAG.TOF.Infrastructure.Repositories
                 .OrderBy(r => r.StartDate) // Get earliest overlapping request
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<List<Request>> GetRequestsByUserIdAsync(int userId)
+        {
+            return await _context.Requests
+                .Where( r => r.UserId == userId)
+                .OrderByDescending(r => r.StartDate) // Most recent first
+                .ToListAsync();
+        }
     }
 }

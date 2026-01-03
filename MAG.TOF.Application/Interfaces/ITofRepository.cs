@@ -15,6 +15,8 @@ namespace MAG.TOF.Application.Interfaces
         Task UpdateRequestAsync(Request request);
         Task DeleteRequestAsync(int id);
 
+        Task <List<Request>> GetRequestsByUserIdAsync(int userId);
+
         Task<Request?> HasOverlappingRequestsAsync(int userId, DateTime startDate, DateTime endDate);
     }
 }
