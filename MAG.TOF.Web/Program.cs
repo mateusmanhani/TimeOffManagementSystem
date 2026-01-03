@@ -1,4 +1,6 @@
 using MAG.TOF.Application.Commands.CreateRequests;
+using MAG.TOF.Application.Commands.DeleteRequest;
+using MAG.TOF.Application.Commands.RecallRequest;
 using MAG.TOF.Application.Commands.UpdateRequest;
 using MAG.TOF.Application.Interfaces;
 using MAG.TOF.Application.Queries.GetUserRequests;
@@ -142,6 +144,34 @@ try
 
         return result.Match(
             success => Results.Ok(new { Message = "Request updated successfully" }),
+            errors => Results.BadRequest(new { Errors = errors })
+        );
+    }).DisableAntiforgery();
+
+    // Delete - uses route parameter
+    app.MapDelete("/api/test/delete-request/{requestId}", async (
+        int requestId,
+        IMediator mediator) =>
+    {
+        var command = new DeleteRequestCommand(requestId);
+        var result = await mediator.Send(command);
+
+        return result.Match(
+            success => Results.Ok(new { Message = "Request Deleted Successfully" }),
+            errors => Results.BadRequest(new { Errors = errors })
+        );
+    }).DisableAntiforgery();
+
+    // Recall - uses route parameter
+    app.MapPatch("/api/test/recall-request/{requestId}", async (
+        int requestId,
+        IMediator mediator) =>
+    {
+        var command = new RecallRequestCommand(requestId);
+        var result = await mediator.Send(command);
+
+        return result.Match(
+            success => Results.Ok(new { Message = "Request Recalled Successfully, Status changed to Recalled." }),
             errors => Results.BadRequest(new { Errors = errors })
         );
     }).DisableAntiforgery();
