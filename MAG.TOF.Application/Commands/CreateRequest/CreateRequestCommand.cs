@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MAG.TOF.Application.Commands.Create
+namespace MAG.TOF.Application.Commands.CreateRequests
 {
     // Command to create a new Request; Return id of created Request
     public record CreateRequestCommand(

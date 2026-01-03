@@ -1,4 +1,5 @@
-using MAG.TOF.Application.Commands.Create;
+using MAG.TOF.Application.Commands.CreateRequests;
+using MAG.TOF.Application.Commands.UpdateRequest;
 using MAG.TOF.Application.Interfaces;
 using MAG.TOF.Application.Queries.GetUserRequests;
 using MAG.TOF.Domain.Services;
@@ -59,7 +60,7 @@ try
     builder.Services.AddScoped<ITofRepository, TofRepository>();
 
     //  Register Domain Services
-    builder.Services.AddScoped<BusinessDaysCalculator>();
+    builder.Services.AddScoped<RequestValidationService>();
 
     // Register MediatR
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly
@@ -130,6 +131,19 @@ try
             requests => Results.Ok(requests),
             errors => Results.BadRequest(new { Errors = errors })
             );
+    }).DisableAntiforgery();
+
+    // UpdateRequest test endpoint
+    app.MapPut("/api/test/update-request", async (
+        UpdateRequestCommand command,
+        IMediator mediator) =>
+    {
+        var result = await mediator.Send(command);
+
+        return result.Match(
+            success => Results.Ok(new { Message = "Request updated successfully" }),
+            errors => Results.BadRequest(new { Errors = errors })
+        );
     }).DisableAntiforgery();
 
 

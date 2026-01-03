@@ -10,20 +10,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MAG.TOF.Application.Commands.Create
+namespace MAG.TOF.Application.Commands.CreateRequests
 {
     public class CreateRequestHandler : IRequestHandler<CreateRequestCommand, ErrorOr<int>>
     {
 
         private readonly ITofRepository _repository;
         private readonly ILogger<CreateRequestHandler> _logger;
-        private readonly BusinessDaysCalculator _businessDaysCalculator;
+        private readonly RequestValidationService _validationService;
 
-        public CreateRequestHandler(ITofRepository repository, ILogger<CreateRequestHandler> logger, BusinessDaysCalculator businessDaysCaluclator)
+        public CreateRequestHandler(ITofRepository repository, ILogger<CreateRequestHandler> logger, RequestValidationService validationService)
         {
             _repository = repository;
             _logger = logger;
-            _businessDaysCalculator = businessDaysCaluclator;
+            _validationService = validationService;
         }
 
         public async Task<ErrorOr<int>> Handle(CreateRequestCommand command, CancellationToken cancellationToken)
@@ -33,7 +33,7 @@ namespace MAG.TOF.Application.Commands.Create
                 _logger.LogDebug("Creating request for UserId: {UserId}", command.UserId);
 
                 // validate request
-                if (!_businessDaysCalculator.isValidDateRange(command.StartDate, command.EndDate))
+                if (!_validationService.isValidDateRange(command.StartDate, command.EndDate))
                 {
                     _logger.LogWarning("Invalid date range: StartDate: {StartDate}, EndDate: {EndDate}",
                         command.StartDate, command.EndDate);
@@ -49,7 +49,7 @@ namespace MAG.TOF.Application.Commands.Create
 
                 if (overLappingRequest != null)
                 {
-                    var overlapMessage = _businessDaysCalculator.FormatOverlapMessage(
+                    var overlapMessage = _validationService.FormatOverlapMessage(
                         overLappingRequest.Id,
                         overLappingRequest.StartDate,
                         overLappingRequest.EndDate);
@@ -60,8 +60,10 @@ namespace MAG.TOF.Application.Commands.Create
                     return Error.Conflict("Request.DateOverlap", overlapMessage);
                 }
 
+                // todo: Verify related entities exist (User, Department, Manager, Status)
+
                 // Calculate business days
-                int actualBusinessDays = _businessDaysCalculator.CalculateBusinessDays(
+                int actualBusinessDays = _validationService.CalculateBusinessDays(
                     command.StartDate,
                     command.EndDate);
 

@@ -1,6 +1,6 @@
 ﻿namespace MAG.TOF.Domain.Services
 {
-    public class BusinessDaysCalculator
+    public class RequestValidationService
     {
         public int CalculateBusinessDays(DateTime startDate, DateTime endDate)
         {
