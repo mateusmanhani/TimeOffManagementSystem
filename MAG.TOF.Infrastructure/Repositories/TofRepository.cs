@@ -62,6 +62,8 @@ namespace MAG.TOF.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
+        // todo review repository architecture 1 per table or what?
+        // Rename repository to RequestRepository?
         public async Task<Request?> HasOverlappingRequestsAsync(int usrId, DateTime startDate, DateTime endDate)
         {
             // Find the first overlapping request for this user

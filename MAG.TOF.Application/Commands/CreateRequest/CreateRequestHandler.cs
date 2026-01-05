@@ -4,11 +4,6 @@ using MAG.TOF.Domain.Entities;
 using MAG.TOF.Domain.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MAG.TOF.Application.Commands.CreateRequests
 {
@@ -33,7 +28,7 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                 _logger.LogDebug("Creating request for UserId: {UserId}", command.UserId);
 
                 // validate request
-                if (!_validationService.isValidDateRange(command.StartDate, command.EndDate))
+                if (!_validationService.IsValidDateRange(command.StartDate, command.EndDate))
                 {
                     _logger.LogWarning("Invalid date range: StartDate: {StartDate}, EndDate: {EndDate}",
                         command.StartDate, command.EndDate);
@@ -57,6 +52,7 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                     _logger.LogWarning("Date overlap detected for UserId: {UserId}. {Message}",
                         command.UserId, overlapMessage);
 
+                    // todo Look into Error library for better suited error type
                     return Error.Conflict("Request.DateOverlap", overlapMessage);
                 }
 

@@ -1,14 +1,8 @@
 ﻿using ErrorOr;
 using MAG.TOF.Application.Interfaces;
-using MAG.TOF.Domain.Entities;
 using MAG.TOF.Domain.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MAG.TOF.Application.Commands.UpdateRequest
 {
@@ -42,7 +36,7 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
                 }
 
                 // Validate New Date Range
-                if (!_validationService.isValidDateRange(command.StartDate, command.EndDate))
+                if (!_validationService.IsValidDateRange(command.StartDate, command.EndDate))
                 {
                     _logger.LogWarning("Invalid date range: StartDate {StartDate}, EndDate {EndDate}", command.StartDate, command.EndDate);
                     return Error.Validation("InvalidDateRange", "The start date must be before the end date.");
@@ -54,12 +48,7 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
                 existingRequest.StartDate = command.StartDate;
                 existingRequest.EndDate = command.EndDate;
                 existingRequest.StatusId = command.StatusId;
-
-                if (command.ManagerId.HasValue)
-                {
-                    existingRequest.ManagerId = command.ManagerId.Value;
-                }
-
+                existingRequest.ManagerId = command.ManagerId.Value;
 
                 await _repository.UpdateRequestAsync(existingRequest);
                 _logger.LogInformation("Request with ID {RequestId} updated successfully", command.RequestId);
@@ -86,7 +75,7 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
                 return Error.Validation("InvalidManagerId", "The manager ID must be a positive integer.");
             }
 
-            if (command.StatusId <= 0)
+            if (command.StatusId <= 0 && command.StatusId <6)
             {
                 _logger.LogWarning("Invalid StatusId: {StatusId}", command.StatusId);
                 return Error.Validation("InvalidStatusId", "The status ID must be a positive integer.");

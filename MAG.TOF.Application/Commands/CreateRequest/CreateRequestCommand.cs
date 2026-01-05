@@ -14,8 +14,9 @@ namespace MAG.TOF.Application.Commands.CreateRequests
         int DepartmentId,
         DateTime StartDate,
         DateTime EndDate,
-        int ManagerId,
+        int? ManagerId,
         int StatusId // default 1(draft) or 2(pending)? 
+                     // todo create enum for status ids
         ) : IRequest<ErrorOr<int>>;
 
 }

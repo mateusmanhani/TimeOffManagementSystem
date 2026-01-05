@@ -27,7 +27,7 @@
             return businessDays;
         }
 
-        public bool isValidDateRange(DateTime startDate, DateTime endDate)
+        public bool IsValidDateRange(DateTime startDate, DateTime endDate)
         {
             if (endDate < startDate)
             {

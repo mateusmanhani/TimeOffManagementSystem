@@ -20,7 +20,7 @@ namespace MAG.TOF.Domain.Entities
 
         public int TotalBusinessDays { get; set; }
 
-        public int ManagerId { get; set; }
+        public int? ManagerId { get; set; }
 
         public string? ManagerComment { get; set; }
 
