@@ -1,6 +1,7 @@
 ﻿@page "/requests/create"
 @rendermode InteractiveServer
 @using MAG.TOF.Application.Commands.CreateRequests
+@using MAG.TOF.Domain.Enums
 @using MediatR
 @inject IMediator Mediator
 @inject NavigationManager Navigation
@@ -54,8 +55,14 @@
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Status ID</label>
-        <InputNumber @bind-Value="model.StatusId" class="form-control" />
+        <label class="form-label">Status</label>
+        <InputSelect @bind-Value="model.Status" class="form-control">
+            <option value="@RequestStatus.Draft">Draft</option>
+            <option value="@RequestStatus.Pending">Pending</option>
+            <option value="@RequestStatus.Approved">Approved</option>
+            <option value="@RequestStatus.Rejected">Rejected</option>
+            <option value="@RequestStatus.Recalled">Recalled</option>
+        </InputSelect>
     </div>
 
     <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
@@ -93,11 +100,10 @@
                 StartDate: model.StartDate,
                 EndDate: model.EndDate,
                 ManagerId: model.ManagerId,
-                StatusId: model.StatusId
+                Status: model.Status  // Changed from StatusId
             );
 
             // Step 2: Send the command through MediatR
-            // MediatR will automatically route it to CreateRequestHandler
             var result = await Mediator.Send(command);
 
             // Step 3: Handle the result (success or errors)
@@ -147,6 +153,6 @@
         public DateTime StartDate { get; set; } = DateTime.Today;
         public DateTime EndDate { get; set; } = DateTime.Today.AddDays(1);
         public int ManagerId { get; set; }
-        public int StatusId { get; set; } = 1; // Default to "Pending" or whatever your default is
+        public RequestStatus Status { get; set; } = RequestStatus.Pending;  // Changed from int StatusId
     }
 }

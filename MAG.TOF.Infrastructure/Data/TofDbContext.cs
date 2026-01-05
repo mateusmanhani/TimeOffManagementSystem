@@ -1,4 +1,5 @@
 ﻿using MAG.TOF.Domain.Entities;
+using MAG.TOF.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,11 @@ namespace MAG.TOF.Infrastructure.Data
                 entity.Property(e => e.TotalBusinessDays).IsRequired();
                 entity.Property(e => e.ManagerId).IsRequired();
                 entity.Property(e => e.ManagerComment).HasMaxLength(1000);
-                entity.Property(e => e.StatusId).IsRequired();
+                
+                // Configure enum to be stored as int in database
+                entity.Property(e => e.Status)
+                    .HasConversion<int>()
+                    .IsRequired();
             });
         }
     }

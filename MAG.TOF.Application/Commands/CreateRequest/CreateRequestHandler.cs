@@ -1,6 +1,7 @@
 ﻿using ErrorOr;
 using MAG.TOF.Application.Interfaces;
 using MAG.TOF.Domain.Entities;
+using MAG.TOF.Domain.Enums;
 using MAG.TOF.Domain.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -10,11 +11,11 @@ namespace MAG.TOF.Application.Commands.CreateRequests
     public class CreateRequestHandler : IRequestHandler<CreateRequestCommand, ErrorOr<int>>
     {
 
-        private readonly ITofRepository _repository;
+        private readonly IRequestRepository _repository;
         private readonly ILogger<CreateRequestHandler> _logger;
         private readonly RequestValidationService _validationService;
 
-        public CreateRequestHandler(ITofRepository repository, ILogger<CreateRequestHandler> logger, RequestValidationService validationService)
+        public CreateRequestHandler(IRequestRepository repository, ILogger<CreateRequestHandler> logger, RequestValidationService validationService)
         {
             _repository = repository;
             _logger = logger;
@@ -52,7 +53,6 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                     _logger.LogWarning("Date overlap detected for UserId: {UserId}. {Message}",
                         command.UserId, overlapMessage);
 
-                    // todo Look into Error library for better suited error type
                     return Error.Conflict("Request.DateOverlap", overlapMessage);
                 }
 
@@ -63,13 +63,13 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                     command.StartDate,
                     command.EndDate);
 
-                _logger.LogDebug("Calculates {BusinessDays} business days for date range {StartDate_ to {EndDate}",
+                _logger.LogDebug("Calculated {BusinessDays} business days for date range {StartDate} to {EndDate}",
                     actualBusinessDays, command.StartDate, command.EndDate);
 
                 //Validate minimum business days
                 if (actualBusinessDays <= 0)
                 {
-                    _logger.LogWarning("No businesss days in selected range");
+                    _logger.LogWarning("No business days in selected range");
                     return Error.Validation("Request.NoBusinessDays", "Total business days must be greater than 0");
                 }
 
@@ -82,13 +82,13 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                     EndDate = command.EndDate,
                     TotalBusinessDays = actualBusinessDays,
                     ManagerId = command.ManagerId,
-                    StatusId = command.StatusId
+                    Status = command.Status  // Changed from StatusId
                 };
 
                 // Save to database
                 await _repository.AddRequestAsync(request);
 
-                _logger.LogInformation("Sucessfully created request with Id: {RequestId} for UserId: {UserId}",
+                _logger.LogInformation("Successfully created request with Id: {RequestId} for UserId: {UserId}",
                     request.Id, request.UserId);
                 return request.Id;
             }

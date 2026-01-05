@@ -1,4 +1,5 @@
 ﻿using ErrorOr;
+using MAG.TOF.Domain.Enums;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -15,8 +16,7 @@ namespace MAG.TOF.Application.Commands.CreateRequests
         DateTime StartDate,
         DateTime EndDate,
         int? ManagerId,
-        int StatusId // default 1(draft) or 2(pending)? 
-                     // todo create enum for status ids
+        RequestStatus Status = RequestStatus.Pending  // Changed from int StatusId, default to Pending
         ) : IRequest<ErrorOr<int>>;
 
 }

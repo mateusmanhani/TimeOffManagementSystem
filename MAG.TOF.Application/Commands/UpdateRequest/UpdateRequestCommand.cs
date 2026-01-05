@@ -1,4 +1,5 @@
 ﻿using ErrorOr;
+using MAG.TOF.Domain.Enums;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,6 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
         DateTime StartDate,
         DateTime EndDate,
         int? ManagerId,
-        int StatusId
+        RequestStatus Status  // Changed from int StatusId
         ) : IRequest<ErrorOr<Success>>;
 }

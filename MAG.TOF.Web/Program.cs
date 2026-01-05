@@ -59,7 +59,7 @@ try
         options.UseSqlServer(connectionString));
 
     // Register Repository
-    builder.Services.AddScoped<ITofRepository, TofRepository>();
+    builder.Services.AddScoped<IRequestRepository, RequestRepository>();
 
     //  Register Domain Services
     builder.Services.AddScoped<RequestValidationService>();

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MAG.TOF.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+aa60a8817808be59e00cce4f5eaf8cad2d0b45b5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9c4960a36937af1a8f16f44564375842d8b7d7f7")]
 [assembly: System.Reflection.AssemblyProductAttribute("MAG.TOF.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MAG.TOF.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

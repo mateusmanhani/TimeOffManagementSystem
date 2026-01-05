@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace MAG.TOF.Application.Interfaces
 {
-    public interface ITofRepository
+    public interface IRequestRepository
     {
         Task <List<Request>> GetAllRequestsAsync();
         Task<Request?> GetRequestByIdAsync(int id);

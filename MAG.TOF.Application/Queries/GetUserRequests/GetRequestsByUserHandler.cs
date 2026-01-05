@@ -8,10 +8,10 @@ namespace MAG.TOF.Application.Queries.GetUserRequests
 {
     public class GetRequestsByUserHandler : IRequestHandler<GetRequestsByUserQuery, ErrorOr<List<Request>>>
     {
-        private readonly ITofRepository _repository;
+        private readonly IRequestRepository _repository;
         private readonly ILogger<GetRequestsByUserHandler> _logger;
 
-        public GetRequestsByUserHandler(ITofRepository repository, ILogger<GetRequestsByUserHandler> logger)
+        public GetRequestsByUserHandler(IRequestRepository repository, ILogger<GetRequestsByUserHandler> logger)
         {
             _repository = repository;
             _logger = logger;

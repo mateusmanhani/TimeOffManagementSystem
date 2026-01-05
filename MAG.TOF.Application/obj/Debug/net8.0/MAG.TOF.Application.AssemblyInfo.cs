@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MAG.TOF.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5f5daea2d491c00ecbd2f214435e688c7f6a53cb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9c4960a36937af1a8f16f44564375842d8b7d7f7")]
 [assembly: System.Reflection.AssemblyProductAttribute("MAG.TOF.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MAG.TOF.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

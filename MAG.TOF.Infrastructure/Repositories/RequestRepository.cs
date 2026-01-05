@@ -11,12 +11,12 @@ using System.Threading.Tasks;
 
 namespace MAG.TOF.Infrastructure.Repositories
 {
-    public class TofRepository : ITofRepository
+    public class RequestRepository : IRequestRepository
     {
 
         private readonly TofDbContext _context;
 
-        public TofRepository(TofDbContext context)
+        public RequestRepository(TofDbContext context)
         {
             _context = context;
         }

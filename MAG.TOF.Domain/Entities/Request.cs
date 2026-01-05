@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MAG.TOF.Domain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,7 +25,7 @@ namespace MAG.TOF.Domain.Entities
 
         public string? ManagerComment { get; set; }
 
-        public int StatusId { get; set; }
+        public RequestStatus Status { get; set; }
 
     }
 }

@@ -1,5 +1,6 @@
 ﻿using ErrorOr;
 using MAG.TOF.Application.Interfaces;
+using MAG.TOF.Domain.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System;
@@ -12,9 +13,10 @@ namespace MAG.TOF.Application.Commands.RecallRequest
 {
     public class RecallRequestHandler : IRequestHandler<RecallRequestCommand, ErrorOr<Success>>
     {
-        private readonly ITofRepository _repository;
+        private readonly IRequestRepository _repository;
         private readonly ILogger<RecallRequestHandler> _logger;
-        public RecallRequestHandler(ITofRepository repository, ILogger<RecallRequestHandler> logger)
+        
+        public RecallRequestHandler(IRequestRepository repository, ILogger<RecallRequestHandler> logger)
         {
             _repository = repository;
             _logger = logger;
@@ -24,16 +26,32 @@ namespace MAG.TOF.Application.Commands.RecallRequest
         {
             try
             {
-                // Try fetching and validating request
+                // Validate RequestId
+                if (command.RequestId <= 0)
+                {
+                    _logger.LogWarning("RecallRequestHandler: Invalid RequestId: {RequestId}", command.RequestId);
+                    return Error.Validation("InvalidRequestId", "The request ID must be a positive integer.");
+                }
+
+                // Fetch existing request
                 var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId);
                 if (existingRequest is null)
                 {
                     _logger.LogWarning("RecallRequestHandler: Request with Id {RequestId} not found.", command.RequestId);
-                    return Error.NotFound(description: $"Request with Id {command.RequestId} not found.");
+                    return Error.NotFound("RequestNotFound", $"Request with Id {command.RequestId} not found.");
                 }
 
-                // Update request status to 'Recalled' which is 5)
-                existingRequest.StatusId = 5;
+                // Use extension method for clean validation
+                if (!existingRequest.Status.CanBeRecalled())
+                {
+                    _logger.LogWarning("RecallRequestHandler: Request {RequestId} cannot be recalled. Current status: {Status}", 
+                        command.RequestId, existingRequest.Status);
+                    return Error.Validation("InvalidStatusForRecall", 
+                        $"Only pending or approved requests can be recalled. Current status: {existingRequest.Status}");
+                }
+
+                // Update request status to 'Recalled'
+                existingRequest.Status = RequestStatus.Recalled;
                 await _repository.UpdateRequestAsync(existingRequest);
                 
                 _logger.LogInformation("RecallRequestHandler: Successfully recalled request with Id {RequestId}.", command.RequestId);
@@ -43,9 +61,8 @@ namespace MAG.TOF.Application.Commands.RecallRequest
             catch (Exception ex)
             { 
                 _logger.LogError(ex, "RecallRequestHandler: Error recalling request with Id {RequestId}.", command.RequestId);
-                return Error.Failure(description: "An error occurred while recalling the request.");
+                return Error.Failure("RecallRequestFailed", "An error occurred while recalling the request.");
             }
-
         }
     }
 }
