@@ -25,7 +25,7 @@ namespace MAG.TOF.Infrastructure.Services
             try
             {
                 //  Call CoreApi read json response and deserialise into List<CoreApiUser>
-                var users = await _httpClient.GetFromJsonAsync<List<CoreApiUser>>("api/users");
+                var users = await _httpClient.GetFromJsonAsync<List<CoreApiUser>>("api/user");
 
                 // Handle null respnse
                 if (users == null)
@@ -58,7 +58,7 @@ namespace MAG.TOF.Infrastructure.Services
             try
             {
                 // Call Core API, fetch and deserialise json to List<Department>
-                var departments = await _httpClient.GetFromJsonAsync<List<DepartmentDto>>("api/departments");
+                var departments = await _httpClient.GetFromJsonAsync<List<DepartmentDto>>("api/department");
 
                 // Handle null result
                 if (departments == null)
@@ -90,7 +90,7 @@ namespace MAG.TOF.Infrastructure.Services
             try
             {
                 // Call Core API, fetch and deserialise json to List<Department>
-                var grades = await _httpClient.GetFromJsonAsync<List<GradeDto>>("api/grades");
+                var grades = await _httpClient.GetFromJsonAsync<List<GradeDto>>("api/grade");
 
                 // Handle null result
                 if (grades == null)

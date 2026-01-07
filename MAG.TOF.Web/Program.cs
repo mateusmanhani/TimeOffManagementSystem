@@ -1,3 +1,4 @@
+using ErrorOr;
 using MAG.TOF.Application.Commands.CreateRequests;
 using MAG.TOF.Application.Commands.DeleteRequest;
 using MAG.TOF.Application.Commands.RecallRequest;
@@ -7,6 +8,7 @@ using MAG.TOF.Application.Queries.GetUserRequests;
 using MAG.TOF.Domain.Services;
 using MAG.TOF.Infrastructure.Data;
 using MAG.TOF.Infrastructure.Repositories;
+using MAG.TOF.Infrastructure.Services;
 using MAG.TOF.Web.Components;
 using MAG.TOF.Web.Components.Account;
 using MAG.TOF.Web.Data;
@@ -63,6 +65,21 @@ try
 
     //  Register Domain Services
     builder.Services.AddScoped<RequestValidationService>();
+
+    // Register HttpClient for CORE API
+    builder.Services.AddHttpClient<ICoreApiClient, CoreApiService>(client =>
+    {
+        var baseUrl = builder.Configuration["CoreApi:BaseUrl"]
+            ?? throw new InvalidOperationException("CoreApi:BaseUrl not configured in appsetting.json");
+
+        client.BaseAddress = new Uri(baseUrl);
+        client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("CoreApi:Timeout", 30));
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+    });
+
+    //  Register In-Memory Cache
+    builder.Services.AddMemoryCache();
+    builder.Services.AddScoped<ICacheService, InMemoryCacheService>();
 
     // Register MediatR
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly
@@ -175,6 +192,114 @@ try
             errors => Results.BadRequest(new { Errors = errors })
         );
     }).DisableAntiforgery();
+
+
+    //  Test CORE API - Get Users
+    app.MapGet("/api/test/core-users", async (ICoreApiClient coreApiClient, ILogger<Program> logger) =>
+    {
+        try
+        {
+            logger.LogInformation("TEST: Calling CoreApiService.GetUsersAsync()");
+            var users = await coreApiClient.GetUsersAsync();
+            return Results.Ok(new
+            {
+                Success = true,
+                Message = "Successfully fetched Users from core API",
+                Count = users.Count,
+                Users = users
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "TEST: Failed to fetch users from CORE API");
+            return Results.BadRequest(new
+            {
+                Success = false,
+                Error = ex.Message
+            });
+        }
+    }).DisableAntiforgery();
+
+    // Test CORE API - Get Departments
+    app.MapGet("/api/test/core-departments", async (ICoreApiClient coreApiClient, ILogger<Program> logger) =>
+    {
+        try
+        {
+            logger.LogInformation("TEST: Calling CoreApiService.GetDepartmentsAsync()");
+            var departments = await coreApiClient.GetDepartmentsAsync();
+            return Results.Ok(new
+            {
+                Success = true,
+                Message = "Successfully fetched departments from core API",
+                Count = departments.Count,
+                Departments = departments
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "TEST: Failed to fetch departments from CORE API");
+            return Results.BadRequest(new
+            {
+                Success = false,
+                Error = ex.Message
+            });
+        }
+    }).DisableAntiforgery();
+
+    // Test CORE API - Get Grades
+    app.MapGet("/api/test/core-grades", async (ICoreApiClient coreApiClient, ILogger<Program> logger) =>
+    {
+        try
+        {
+            logger.LogInformation("TEST: Calling CoreApiService.GetGradesAsync()");
+            var grades = await coreApiClient.GetGradesAsync();
+            return Results.Ok(new
+            {
+                Success = true,
+                Message = "Successfully fetched grades from core API",
+                Count = grades.Count,
+                Grades = grades
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "TEST: Failed to fetch grades from CORE API");
+            return Results.BadRequest(new
+            {
+                Success = false,
+                Error = ex.Message
+            });
+        }
+    }).DisableAntiforgery();
+
+    //Test Caching
+    app.MapGet("/api/test/cache-test", async (ICacheService cacheService, ICoreApiClient coreApiClient) =>
+    {
+        var cacheKey = "test_users";
+
+        // First call - should fetch from API
+        var users1 = await cacheService.GetOrCreateAsync(
+            cacheKey,
+            async () => await coreApiClient.GetUsersAsync(),
+            TimeSpan.FromMinutes(5)
+        );
+
+        // Second call - should come from cache
+        var users2 = await cacheService.GetOrCreateAsync(
+            cacheKey,
+            async () => await coreApiClient.GetUsersAsync(),
+            TimeSpan.FromMinutes(5)
+        );
+
+        return Results.Ok(new
+        {
+            Message = "Cache working!",
+            FirstCallCount = users1.Count,
+            SecondCallCount = users2.Count,
+            Note = "Check logs - second call should not hit API"
+        });
+    }).DisableAntiforgery();
+
 
 
     logger.Info("Application started successfully");
