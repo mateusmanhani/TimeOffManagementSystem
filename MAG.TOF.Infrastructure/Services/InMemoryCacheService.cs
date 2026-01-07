@@ -33,7 +33,7 @@ namespace MAG.TOF.Infrastructure.Services
         // Stores value in cache
         public Task SetAsync<T>(string key, T value, TimeSpan? expiration = null) where T : class
         {
-            _logger.LogDebug("Setting cache key: {Key} with expiration: {Expiration)", 
+            _logger.LogDebug("Setting cache key: {Key} with expiration: {Expiration}", 
                 key, expiration ?? TimeSpan.FromMinutes(30));
 
             var cacheOptions = new MemoryCacheEntryOptions

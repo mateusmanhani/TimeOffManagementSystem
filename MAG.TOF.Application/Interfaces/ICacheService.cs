@@ -18,7 +18,7 @@ namespace MAG.TOF.Application.Interfaces
         Task RemoveAsync(string key);
 
         // Gets value from cache, or creates it using the factory function if not found.
-        Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> createItem, TimeSpan? expiration = null) where T : class;
+        Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, TimeSpan? expiration = null) where T : class;
 
 
     }

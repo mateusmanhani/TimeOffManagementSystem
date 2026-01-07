@@ -1,10 +1,5 @@
 ﻿using MAG.TOF.Application.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
 namespace MAG.TOF.Application.Models
 {
@@ -19,7 +14,8 @@ namespace MAG.TOF.Application.Models
         public int StatusId { get; set; }
 
         // Navigation properties
-        public GradeDto Grade { get; set; } = null!;
-        public DepartmentDto Department { get; set; } = null!;
+        //[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        //public GradeDto Grade { get; set; } = null!;
+        //public DepartmentDto? Department { get; set; } = null!;
     }
 }

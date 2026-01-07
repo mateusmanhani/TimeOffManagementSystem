@@ -1,6 +1,8 @@
-﻿namespace MAG.TOF.Application.Queries.GetDepartments
+﻿using ErrorOr;
+using MAG.TOF.Application.DTOs;
+using MediatR;
+
+namespace MAG.TOF.Application.Queries.GetDepartments
 {
-    public class GetDepartmentsQuery
-    {
-    }
+    public record GetDepartmentsQuery : IRequest<ErrorOr<List<DepartmentDto>>>;
 }

@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ErrorOr;
+using MAG.TOF.Application.DTOs;
+using MediatR;
 
 namespace MAG.TOF.Application.Queries.GetGrades
 {
-    public class GetGradesQuery
-    {
-    }
+    public record GetGradesQuery : IRequest<ErrorOr<List<GradeDto>>>;
 }
