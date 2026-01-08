@@ -1,5 +1,6 @@
 using MAG.TOF.Application.Commands.CreateRequests;
 using MAG.TOF.Application.Interfaces;
+using MAG.TOF.Application.Services;
 using MAG.TOF.Domain.Services;
 using MAG.TOF.Infrastructure.Data;
 using MAG.TOF.Infrastructure.Repositories;
@@ -57,7 +58,8 @@ try
     // Register Repository
     builder.Services.AddScoped<IRequestRepository, RequestRepository>();
 
-    //  Register Domain Services
+    // Register Validation Services
+    builder.Services.AddScoped<ReferenceDataValidationService>();
     builder.Services.AddScoped<RequestValidationService>();
 
     // Register HttpClient for CORE API

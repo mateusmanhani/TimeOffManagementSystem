@@ -1,7 +1,7 @@
 ﻿using ErrorOr;
 using MAG.TOF.Application.Interfaces;
+using MAG.TOF.Application.Services;
 using MAG.TOF.Domain.Entities;
-using MAG.TOF.Domain.Enums;
 using MAG.TOF.Domain.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -14,12 +14,18 @@ namespace MAG.TOF.Application.Commands.CreateRequests
         private readonly IRequestRepository _repository;
         private readonly ILogger<CreateRequestHandler> _logger;
         private readonly RequestValidationService _validationService;
+        private readonly ReferenceDataValidationService _referenceValidation;
 
-        public CreateRequestHandler(IRequestRepository repository, ILogger<CreateRequestHandler> logger, RequestValidationService validationService)
+        public CreateRequestHandler(IRequestRepository repository, 
+            ILogger<CreateRequestHandler> logger, 
+            RequestValidationService validationService,
+            ReferenceDataValidationService referenceValidation
+            )
         {
             _repository = repository;
             _logger = logger;
             _validationService = validationService;
+            _referenceValidation = referenceValidation;
         }
 
         public async Task<ErrorOr<int>> Handle(CreateRequestCommand command, CancellationToken cancellationToken)
@@ -27,6 +33,21 @@ namespace MAG.TOF.Application.Commands.CreateRequests
             try
             {
                 _logger.LogDebug("Creating request for UserId: {UserId}", command.UserId);
+
+                // validate user exists (using cached data)
+                var userResult = await _referenceValidation.ValidateUserExistsAsync(command.UserId);
+                if (userResult.IsError) return userResult.Errors;
+
+                // Validate department exists
+                var departmentResult = await _referenceValidation.ValidateDepartmentExistsAsync(command.DepartmentId);
+                if (departmentResult.IsError) return departmentResult.Errors;
+
+                // Validate manager exists (if provided)
+                if (command.ManagerId.HasValue)
+                {
+                    var managerResult = await _referenceValidation.ValidateManagerExistsAndHasCorrectGradeAsync(command.ManagerId.Value);
+                    if (managerResult.IsError) return managerResult.Errors;
+                }
 
                 // validate request
                 if (!_validationService.IsValidDateRange(command.StartDate, command.EndDate))
@@ -56,8 +77,6 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                     return Error.Conflict("Request.DateOverlap", overlapMessage);
                 }
 
-                // todo: Verify related entities exist (User, Department, Manager, Status)
-
                 // Calculate business days
                 int actualBusinessDays = _validationService.CalculateBusinessDays(
                     command.StartDate,
@@ -82,7 +101,7 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                     EndDate = command.EndDate,
                     TotalBusinessDays = actualBusinessDays,
                     ManagerId = command.ManagerId,
-                    Status = command.Status  // Changed from StatusId
+                    Status = command.Status 
                 };
 
                 // Save to database

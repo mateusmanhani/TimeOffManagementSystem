@@ -1,5 +1,6 @@
 ﻿using ErrorOr;
 using MAG.TOF.Application.Interfaces;
+using MAG.TOF.Application.Services;
 using MAG.TOF.Domain.Enums;
 using MAG.TOF.Domain.Services;
 using MediatR;
@@ -12,12 +13,17 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
         private readonly IRequestRepository _repository;
         private readonly ILogger<UpdateRequestHandler> _logger;
         private readonly RequestValidationService _validationService;
+        private readonly ReferenceDataValidationService _referenceValidation;
 
-        public UpdateRequestHandler(IRequestRepository repository, ILogger<UpdateRequestHandler> logger, RequestValidationService requestValidationService)
+        public UpdateRequestHandler(IRequestRepository repository, 
+            ILogger<UpdateRequestHandler> logger, 
+            RequestValidationService requestValidationService,
+            ReferenceDataValidationService referenceValidation)
         {
             _repository = repository;
             _logger = logger;
             _validationService = requestValidationService;
+            _referenceValidation = referenceValidation;
         }
         
         public async Task<ErrorOr<Success>> Handle(UpdateRequestCommand command, CancellationToken cancellationToken)
@@ -68,8 +74,15 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
                 existingRequest.EndDate = command.EndDate;
                 existingRequest.Status = command.Status;
 
+                // Validate Manager if provided
                 if (command.ManagerId.HasValue)
                 {
+                    var managerResult = await _referenceValidation.ValidateManagerExistsAndHasCorrectGradeAsync(command.ManagerId.Value);
+                    if (managerResult.IsError)
+                    {
+                        _logger.LogWarning("Manager validation failed for ManagerId {ManagerId}", command.ManagerId.Value);
+                        return managerResult.FirstError;
+                    }
                     existingRequest.ManagerId = command.ManagerId.Value;
                 }
 
