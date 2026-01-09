@@ -59,6 +59,13 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
                     return Error.Unauthorized("Unauthorized", "Only the owner of the request may update a request.");
                 }
 
+                // Ensure user cannot set himself as approving manager
+                if (command.LoggedUserId == command.ManagerId)
+                {
+                    _logger.LogWarning("You cannot set yourself as approving manager on a request.");
+                    return Error.Conflict("Request.Conflict", "You cannot set yourself as approving manager on a request.");
+                }
+
 
                 // Validate status transition if status is being changed
                 if (existingRequest.Status != command.Status && !existingRequest.Status.CanTransitionTo(command.Status))

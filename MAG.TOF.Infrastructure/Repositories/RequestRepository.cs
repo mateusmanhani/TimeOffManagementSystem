@@ -1,13 +1,8 @@
 ﻿using MAG.TOF.Application.Interfaces;
 using MAG.TOF.Domain.Entities;
+using MAG.TOF.Domain.Enums;
 using MAG.TOF.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using NLog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MAG.TOF.Infrastructure.Repositories
 {
@@ -81,6 +76,17 @@ namespace MAG.TOF.Infrastructure.Repositories
                 .Where( r => r.UserId == userId)
                 .OrderByDescending(r => r.StartDate) // Most recent first
                 .ToListAsync();
+        }
+
+        // todo - implement pagination | Manual or PaginatedResult class?
+        public async Task<List<Request>> GetPendingRequestsByManagerId(int loggedUserId)
+        {
+            return await _context.Requests
+                .Where(r => r.ManagerId == loggedUserId 
+                && r.Status == RequestStatus.Pending)
+                .OrderByDescending(r => r.StartDate)
+                .ToListAsync();
+           
         }
     }
 }

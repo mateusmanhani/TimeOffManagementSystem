@@ -49,6 +49,13 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                     if (managerResult.IsError) return managerResult.Errors;
                 }
 
+                // Ensure user cannot set himself as approving manager
+                if (command.UserId == command.ManagerId)
+                {
+                    _logger.LogWarning("You cannot set yourself as approving manager on a request.");
+                    return Error.Conflict("Request.Conflict", "You cannot set yourself as approving manager on a request.");
+                }
+
                 // validate request
                 if (!_validationService.IsValidDateRange(command.StartDate, command.EndDate))
                 {

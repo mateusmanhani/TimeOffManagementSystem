@@ -1,9 +1,11 @@
+using ErrorOr;
 using MAG.TOF.Application.Commands.ApproveRequest;
 using MAG.TOF.Application.Commands.CreateRequests;
 using MAG.TOF.Application.Commands.DeleteRequest;
 using MAG.TOF.Application.Commands.RecallRequest;
 using MAG.TOF.Application.Commands.RejectRequest;
 using MAG.TOF.Application.Commands.UpdateRequest;
+using MAG.TOF.Application.Queries.GetPendingRequests;
 using MAG.TOF.Application.Queries.GetUserRequests;
 using MediatR;
 
@@ -19,6 +21,32 @@ namespace MAG.TOF.Web.Endpoints
             var group = app.MapGroup("/api/test/requests")
                 .WithTags("Request Tests")
                 .DisableAntiforgery();
+
+            // Get Pending requests for manager
+            group.MapGet("/pending/manager/{managerId}", async (int loggedUserId, IMediator mediator) =>
+            {
+                var query = new GetPendingRequestsQuery(loggedUserId);
+                var result = await mediator.Send(query);
+
+                return result.Match(
+                    requests => Results.Ok(new
+                    {
+                        Success = true,
+                        Count = requests.Count,
+                        Requests = requests
+                    }),
+                    errors => Results.BadRequest(new
+                    {
+                        Success = false,
+                        Errors = errors.Select(e => new
+                        {
+                            Code = e.Code,
+                            Description = e.Description
+                        }).ToList()
+                    })
+                );
+            })
+                .WithName("GetPendingRequestsByManager");
 
             // Create Request
             group.MapPost("/", async (CreateRequestCommand command, IMediator mediator) =>
