@@ -13,12 +13,12 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
         private readonly IRequestRepository _repository;
         private readonly ILogger<UpdateRequestHandler> _logger;
         private readonly RequestValidationService _validationService;
-        private readonly ReferenceDataValidationService _referenceValidation;
+        private readonly ReferenceDataService _referenceValidation;
 
         public UpdateRequestHandler(IRequestRepository repository, 
             ILogger<UpdateRequestHandler> logger, 
             RequestValidationService requestValidationService,
-            ReferenceDataValidationService referenceValidation)
+            ReferenceDataService referenceValidation)
         {
             _repository = repository;
             _logger = logger;
@@ -51,6 +51,14 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
                     return Error.Validation("CannotEditRequest", 
                         $"Requests with status '{existingRequest.Status}' cannot be edited.");
                 }
+
+                // check if the logged user is the owner of the request
+                if (existingRequest.UserId != command.LoggedUserId)
+                {
+                    _logger.LogWarning("Only the owner of the request may update a request.");
+                    return Error.Unauthorized("Unauthorized", "Only the owner of the request may update a request.");
+                }
+
 
                 // Validate status transition if status is being changed
                 if (existingRequest.Status != command.Status && !existingRequest.Status.CanTransitionTo(command.Status))

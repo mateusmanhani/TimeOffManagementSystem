@@ -45,6 +45,13 @@ namespace MAG.TOF.Application.Commands.DeleteRequest
                         $"Requests with status '{existingRequest.Status}' cannot be deleted. Only Draft, Rejected, or Recalled requests can be deleted.");
                 }
 
+                // check if the logged user is the owner of the request
+                if (existingRequest.UserId != command.LoggedUserId)
+                {
+                    _logger.LogWarning("Only the owner of the request may delete a request.");
+                    return Error.Unauthorized("Unauthorized", "Only the owner of the request may delete a request.");
+                }
+
                 // Delete request
                 await _repository.DeleteRequestAsync(command.RequestId);
 

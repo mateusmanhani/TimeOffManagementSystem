@@ -41,13 +41,20 @@ namespace MAG.TOF.Application.Commands.RecallRequest
                     return Error.NotFound("RequestNotFound", $"Request with Id {command.RequestId} not found.");
                 }
 
-                // Use extension method for clean validation
+                // Chekck if the request can be recalled
                 if (!existingRequest.Status.CanBeRecalled())
                 {
                     _logger.LogWarning("RecallRequestHandler: Request {RequestId} cannot be recalled. Current status: {Status}", 
                         command.RequestId, existingRequest.Status);
                     return Error.Validation("InvalidStatusForRecall", 
                         $"Only pending or approved requests can be recalled. Current status: {existingRequest.Status}");
+                }
+
+                // check if the logged user is the manager assigned to the request
+                if (existingRequest.ManagerId != command.LoggedUserId)
+                {
+                    _logger.LogWarning("Only the Manager assigned to the request may recall a request.");
+                    return Error.Unauthorized("Unauthorized", "Only the Manager assigned to the request may recall a request.");
                 }
 
                 // Update request status to 'Recalled'

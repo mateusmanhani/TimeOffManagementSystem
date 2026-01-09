@@ -14,12 +14,12 @@ namespace MAG.TOF.Application.Commands.CreateRequests
         private readonly IRequestRepository _repository;
         private readonly ILogger<CreateRequestHandler> _logger;
         private readonly RequestValidationService _validationService;
-        private readonly ReferenceDataValidationService _referenceValidation;
+        private readonly ReferenceDataService _referenceValidation;
 
         public CreateRequestHandler(IRequestRepository repository, 
             ILogger<CreateRequestHandler> logger, 
             RequestValidationService validationService,
-            ReferenceDataValidationService referenceValidation
+            ReferenceDataService referenceValidation
             )
         {
             _repository = repository;

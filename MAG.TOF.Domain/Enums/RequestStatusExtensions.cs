@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace MAG.TOF.Domain.Enums
 {
     public static class RequestStatusExtensions
@@ -45,6 +39,15 @@ namespace MAG.TOF.Domain.Enums
         public static bool CanBeRecalled(this RequestStatus status)
         {
             return status is RequestStatus.Pending or RequestStatus.Approved;
+        }
+
+        /// <summary>
+        /// Checks if the current status allows the request to be approved or rejected
+        /// Only pending requests can be approved or rejected
+        /// </summary>
+        public static bool CanBeApprovedOrRejected(this RequestStatus status)
+        {
+            return status is RequestStatus.Pending or RequestStatus.Recalled;
         }
 
         /// <summary>

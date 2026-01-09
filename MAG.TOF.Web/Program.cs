@@ -59,7 +59,7 @@ try
     builder.Services.AddScoped<IRequestRepository, RequestRepository>();
 
     // Register Validation Services
-    builder.Services.AddScoped<ReferenceDataValidationService>();
+    builder.Services.AddScoped<ReferenceDataService>();
     builder.Services.AddScoped<RequestValidationService>();
 
     // Register HttpClient for CORE API
