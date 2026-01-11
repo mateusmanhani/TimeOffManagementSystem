@@ -9,3 +9,6 @@
 /MAG.TOF/.vs/MAG.TOF.slnx
 /MAG.TOF.Web/bin/Debug/net10.0
 /MAG.TOF.Web/obj
+/MAG.TOF.Application/obj/Debug/net8.0
+/MAG.TOF.Domain/obj/Debug/net8.0
+/MAG.TOF.Infrastructure/obj/Debug/net8.0
