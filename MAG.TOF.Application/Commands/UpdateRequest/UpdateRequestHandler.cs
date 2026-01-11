@@ -12,18 +12,18 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
     {
         private readonly IRequestRepository _repository;
         private readonly ILogger<UpdateRequestHandler> _logger;
-        private readonly RequestValidationService _validationService;
-        private readonly ReferenceDataValidationService _referenceValidation;
+        private readonly RequestValidationService _requestValidator;
+        private readonly ExternalDataValidator _externalDataValidator;
 
         public UpdateRequestHandler(IRequestRepository repository, 
             ILogger<UpdateRequestHandler> logger, 
             RequestValidationService requestValidationService,
-            ReferenceDataValidationService referenceValidation)
+            ExternalDataValidator referenceValidation)
         {
             _repository = repository;
             _logger = logger;
-            _validationService = requestValidationService;
-            _referenceValidation = referenceValidation;
+            _requestValidator = requestValidationService;
+            _externalDataValidator = referenceValidation;
         }
         
         public async Task<ErrorOr<Success>> Handle(UpdateRequestCommand command, CancellationToken cancellationToken)
@@ -62,7 +62,7 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
                 }
 
                 // Validate New Date Range
-                if (!_validationService.IsValidDateRange(command.StartDate, command.EndDate))
+                if (!_requestValidator.IsValidDateRange(command.StartDate, command.EndDate))
                 {
                     _logger.LogWarning("Invalid date range: StartDate {StartDate}, EndDate {EndDate}", 
                         command.StartDate, command.EndDate);
@@ -77,7 +77,7 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
                 // Validate Manager if provided
                 if (command.ManagerId.HasValue)
                 {
-                    var managerResult = await _referenceValidation.ValidateManagerExistsAndHasCorrectGradeAsync(command.ManagerId.Value);
+                    var managerResult = await _externalDataValidator.ValidateManagerExistsAndHasCorrectGradeAsync(command.ManagerId.Value);
                     if (managerResult.IsError)
                     {
                         _logger.LogWarning("Manager validation failed for ManagerId {ManagerId}", command.ManagerId.Value);
