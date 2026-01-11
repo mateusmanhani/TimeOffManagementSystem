@@ -64,7 +64,7 @@ try
     builder.Services.AddScoped<RequestValidationService>();
 
     // Register HttpClient for CORE API
-    builder.Services.AddHttpClient<ICoreApiClient, CoreApiService>(client =>
+    builder.Services.AddHttpClient<ICoreApiService, CoreApiService>(client =>
     {
         var baseUrl = builder.Configuration["CoreApi:BaseUrl"]
             ?? throw new InvalidOperationException("CoreApi:BaseUrl not configured in appsetting.json");

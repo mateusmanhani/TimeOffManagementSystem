@@ -4,9 +4,9 @@ using Microsoft.Extensions.Logging;
 
 namespace MAG.TOF.Application.Services
 {
-    public class ExternalDataCache
+    public class ExternalDataCache : IExternalDataCache
     {
-        private readonly ICoreApiClient _coreApiClient;
+        private readonly ICoreApiService _coreApiClient;
         private readonly ICacheService _cacheService;
 
         private const string UsersCacheKey = "users_all";
@@ -14,7 +14,7 @@ namespace MAG.TOF.Application.Services
         private const string GradesCacheKey = "grades_all";
 
         public ExternalDataCache(
-            ICoreApiClient coreApiClient,
+            ICoreApiService coreApiClient,
             ICacheService cacheService)
         {
             _coreApiClient = coreApiClient;

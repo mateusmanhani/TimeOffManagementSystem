@@ -18,8 +18,8 @@ namespace MAG.TOF.Application.Commands.CreateRequests
         private readonly ExternalDataValidator _externalDataValidator;
 
 
-        public CreateRequestHandler(IRequestRepository repository, 
-            ILogger<CreateRequestHandler> logger, 
+        public CreateRequestHandler(IRequestRepository repository,
+            ILogger<CreateRequestHandler> logger,
             RequestValidationService validationService,
             ExternalDataValidator referenceValidation
             )
@@ -52,7 +52,7 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                     EndDate = command.EndDate,
                     TotalBusinessDays = businessDaysResult.Value,
                     ManagerId = command.ManagerId,
-                    Status = command.Status 
+                    Status = command.Status
                 };
 
                 // Save to database
@@ -89,16 +89,16 @@ namespace MAG.TOF.Application.Commands.CreateRequests
             }
 
 
-                // Ensure user cannot set himself as approving manager
-                if (command.UserId == command.ManagerId)
-                {
-                    _logger.LogWarning("You cannot set yourself as approving manager on a request.");
-                    return Error.Conflict("Request.Conflict", "You cannot set yourself as approving manager on a request.");
-                }
+            // Ensure user cannot set himself as approving manager
+            if (command.UserId == command.ManagerId)
+            {
+                _logger.LogWarning("You cannot set yourself as approving manager on a request.");
+                return Error.Conflict("Request.Conflict", "You cannot set yourself as approving manager on a request.");
+            }
 
-                // validate request
-                if (!_requestValidationService.IsValidDateRange(command.StartDate, command.EndDate))
-           
+            // validate request
+            if (!_requestValidationService.IsValidDateRange(command.StartDate, command.EndDate))
+
 
             {
                 _logger.LogWarning("Invalid date range: StartDate: {StartDate}, EndDate: {EndDate}",

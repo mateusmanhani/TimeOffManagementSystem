@@ -12,3 +12,6 @@
 /MAG.TOF.Application/obj
 /MAG.TOF.Domain/obj
 /MAG.TOF.Infrastructure/obj
+/MAG.TOF.Application/bin/Debug/net8.0
+/MAG.TOF.Domain/bin/Debug/net8.0
+/MAG.TOF.Infrastructure/bin/Debug/net8.0

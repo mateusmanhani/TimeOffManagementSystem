@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 
 namespace MAG.TOF.Infrastructure.Services
 {
-    public class CoreApiService : ICoreApiClient
+    public class CoreApiService : ICoreApiService
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<UserDto> _logger;

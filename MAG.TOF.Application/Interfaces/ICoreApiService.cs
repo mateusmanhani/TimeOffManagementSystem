@@ -7,9 +7,8 @@ using System.Threading.Tasks;
 
 namespace MAG.TOF.Application.Interfaces
 {
-    public interface ICoreApiClient
+    public interface ICoreApiService
     {
-
         public Task<List<UserDto>> GetUsersAsync();
         public Task<List<DepartmentDto>> GetDepartmentsAsync();
         public Task<List<GradeDto>> GetGradesAsync();
