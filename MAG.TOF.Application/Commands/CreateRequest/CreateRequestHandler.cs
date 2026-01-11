@@ -13,19 +13,19 @@ namespace MAG.TOF.Application.Commands.CreateRequests
 
         private readonly IRequestRepository _repository;
         private readonly ILogger<CreateRequestHandler> _logger;
-        private readonly RequestValidationService _validationService;
-        private readonly ReferenceDataValidationService _referenceValidation;
+        private readonly RequestValidationService _requestValidationService;
+        private readonly ExternalDataValidator _externalDataValidator;
 
         public CreateRequestHandler(IRequestRepository repository, 
             ILogger<CreateRequestHandler> logger, 
             RequestValidationService validationService,
-            ReferenceDataValidationService referenceValidation
+            ExternalDataValidator referenceValidation
             )
         {
             _repository = repository;
             _logger = logger;
-            _validationService = validationService;
-            _referenceValidation = referenceValidation;
+            _requestValidationService = validationService;
+            _externalDataValidator = referenceValidation;
         }
 
         public async Task<ErrorOr<int>> Handle(CreateRequestCommand command, CancellationToken cancellationToken)
@@ -34,62 +34,11 @@ namespace MAG.TOF.Application.Commands.CreateRequests
             {
                 _logger.LogDebug("Creating request for UserId: {UserId}", command.UserId);
 
-                // validate user exists (using cached data)
-                var userResult = await _referenceValidation.ValidateUserExistsAsync(command.UserId);
-                if (userResult.IsError) return userResult.Errors;
-
-                // Validate department exists
-                var departmentResult = await _referenceValidation.ValidateDepartmentExistsAsync(command.DepartmentId);
-                if (departmentResult.IsError) return departmentResult.Errors;
-
-                // Validate manager exists (if provided)
-                if (command.ManagerId.HasValue)
+                // Validate request and calculate business days
+                var businessDaysResult = await ValidateRequestAsync(command);
+                if (businessDaysResult.IsError)
                 {
-                    var managerResult = await _referenceValidation.ValidateManagerExistsAndHasCorrectGradeAsync(command.ManagerId.Value);
-                    if (managerResult.IsError) return managerResult.Errors;
-                }
-
-                // validate request
-                if (!_validationService.IsValidDateRange(command.StartDate, command.EndDate))
-                {
-                    _logger.LogWarning("Invalid date range: StartDate: {StartDate}, EndDate: {EndDate}",
-                        command.StartDate, command.EndDate);
-                    return Error.Validation("Request.InvalidDateRange",
-                        "Start date must be today or in the future, and end date must be after start date");
-                }
-
-                //  check for overlapping requests
-                var overLappingRequest = await _repository.HasOverlappingRequestsAsync(
-                    command.UserId,
-                    command.StartDate,
-                    command.EndDate);
-
-                if (overLappingRequest != null)
-                {
-                    var overlapMessage = _validationService.FormatOverlapMessage(
-                        overLappingRequest.Id,
-                        overLappingRequest.StartDate,
-                        overLappingRequest.EndDate);
-
-                    _logger.LogWarning("Date overlap detected for UserId: {UserId}. {Message}",
-                        command.UserId, overlapMessage);
-
-                    return Error.Conflict("Request.DateOverlap", overlapMessage);
-                }
-
-                // Calculate business days
-                int actualBusinessDays = _validationService.CalculateBusinessDays(
-                    command.StartDate,
-                    command.EndDate);
-
-                _logger.LogDebug("Calculated {BusinessDays} business days for date range {StartDate} to {EndDate}",
-                    actualBusinessDays, command.StartDate, command.EndDate);
-
-                //Validate minimum business days
-                if (actualBusinessDays <= 0)
-                {
-                    _logger.LogWarning("No business days in selected range");
-                    return Error.Validation("Request.NoBusinessDays", "Total business days must be greater than 0");
+                    return businessDaysResult.Errors;
                 }
 
                 // Map command to entity
@@ -99,7 +48,7 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                     DepartmentId = command.DepartmentId,
                     StartDate = command.StartDate,
                     EndDate = command.EndDate,
-                    TotalBusinessDays = actualBusinessDays,
+                    TotalBusinessDays = businessDaysResult.Value,
                     ManagerId = command.ManagerId,
                     Status = command.Status 
                 };
@@ -117,6 +66,70 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                     command.UserId);
                 return Error.Failure("Request.CreateFailed", "An Error occurred while creating request");
             }
+        }
+
+        // Validate request, calculate/ validate business days and return business days or Errors
+        private async Task<ErrorOr<int>> ValidateRequestAsync(CreateRequestCommand command)
+        {
+            // validate user exists (using cached data)
+            var userResult = await _externalDataValidator.ValidateUserExistsAsync(command.UserId);
+            if (userResult.IsError) return userResult.Errors;
+
+            // Validate department exists
+            var departmentResult = await _externalDataValidator.ValidateDepartmentExistsAsync(command.DepartmentId);
+            if (departmentResult.IsError) return departmentResult.Errors;
+
+            // Validate manager exists (if provided)
+            if (command.ManagerId.HasValue)
+            {
+                var managerResult = await _externalDataValidator.ValidateManagerExistsAndHasCorrectGradeAsync(command.ManagerId.Value);
+                if (managerResult.IsError) return managerResult.Errors;
+            }
+
+            // validate request
+            if (!_requestValidationService.IsValidDateRange(command.StartDate, command.EndDate))
+            {
+                _logger.LogWarning("Invalid date range: StartDate: {StartDate}, EndDate: {EndDate}",
+                    command.StartDate, command.EndDate);
+                return Error.Validation("Request.InvalidDateRange",
+                    "Start date must be today or in the future, and end date must be after start date");
+            }
+
+            //  check for overlapping requests
+            var overLappingRequest = await _repository.HasOverlappingRequestsAsync(
+                command.UserId,
+                command.StartDate,
+                command.EndDate);
+
+            if (overLappingRequest != null)
+            {
+                var overlapMessage = _requestValidationService.FormatOverlapMessage(
+                    overLappingRequest.Id,
+                    overLappingRequest.StartDate,
+                    overLappingRequest.EndDate);
+
+                _logger.LogWarning("Date overlap detected for UserId: {UserId}. {Message}",
+                    command.UserId, overlapMessage);
+
+                return Error.Conflict("Request.DateOverlap", overlapMessage);
+            }
+
+            // Calculate business days
+            int actualBusinessDays = _requestValidationService.CalculateBusinessDays(
+                command.StartDate,
+                command.EndDate);
+
+            _logger.LogDebug("Calculated {BusinessDays} business days for date range {StartDate} to {EndDate}",
+                actualBusinessDays, command.StartDate, command.EndDate);
+
+            //Validate minimum business days
+            if (actualBusinessDays <= 0)
+            {
+                _logger.LogWarning("No business days in selected range");
+                return Error.Validation("Request.NoBusinessDays", "Total business days must be greater than 0");
+            }
+
+            return actualBusinessDays;
         }
     }
 }

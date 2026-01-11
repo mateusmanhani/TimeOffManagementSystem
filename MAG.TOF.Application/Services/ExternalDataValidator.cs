@@ -5,25 +5,21 @@ using Microsoft.Extensions.Logging;
 
 namespace MAG.TOF.Application.Services
 {
-    public class ReferenceDataValidationService
+    public class ExternalDataValidator
     {
-        private readonly ICoreApiClient _coreApiClient;
-        private readonly ICacheService _cacheService;
-        private readonly ILogger<ReferenceDataValidationService> _logger;
+        private readonly ExternalDataCache _externalDataCache;
+        private readonly ILogger<ExternalDataValidator> _logger;
 
-        public ReferenceDataValidationService(
-            ICoreApiClient coreApiClient,
-            ICacheService cacheService,
-            ILogger<ReferenceDataValidationService> logger)
+        public ExternalDataValidator(
+            ExternalDataCache externalDataCache,
+            ILogger<ExternalDataValidator> logger)
         {
-            _coreApiClient = coreApiClient;
-            _cacheService = cacheService;
+            _externalDataCache = externalDataCache;
             _logger = logger;
         }
-
-        public async Task<ErrorOr<UserDto>> ValidateUserExistsAsync(int userId)
+       public async Task<ErrorOr<UserDto>> ValidateUserExistsAsync(int userId)
         {
-            var users = await GetCachedUsersAsync();
+            var users = await _externalDataCache.GetCachedUsersAsync();
             var user = users.FirstOrDefault(u => u.Id == userId);
 
             if (user == null)
@@ -37,7 +33,7 @@ namespace MAG.TOF.Application.Services
 
         public async Task<ErrorOr<DepartmentDto>> ValidateDepartmentExistsAsync(int departmentId)
         {
-            var departments = await GetCachedDepartmentsAsync();
+            var departments = await _externalDataCache.GetCachedDepartmentsAsync();
             var department = departments.FirstOrDefault(d => d.Id == departmentId);
 
             if (department == null)
@@ -61,7 +57,7 @@ namespace MAG.TOF.Application.Services
             var manager = userResult.Value;
 
             // Step 2: Get grades
-            var grades = await GetCachedGradesAsync();
+            var grades = await _externalDataCache.GetCachedGradesAsync();
 
             // Step 3: Check if user has manager grade
             var isManagerGrade = grades.Any(g =>
@@ -80,31 +76,6 @@ namespace MAG.TOF.Application.Services
                 manager.FullName, manager.Id);
 
             return manager;
-        }
-
-        // Private helper methods for caching
-        private async Task<List<UserDto>> GetCachedUsersAsync()
-        {
-            return await _cacheService.GetOrCreateAsync(
-                key: "users_all",
-                factory: async () => await _coreApiClient.GetUsersAsync(),
-                expiration: TimeSpan.FromMinutes(30));
-        }
-
-        private async Task<List<DepartmentDto>> GetCachedDepartmentsAsync()
-        {
-            return await _cacheService.GetOrCreateAsync(
-                key: "departments_all",
-                factory: async () => await _coreApiClient.GetDepartmentsAsync(),
-                expiration: TimeSpan.FromMinutes(30));
-        }
-
-        private async Task<List<GradeDto>> GetCachedGradesAsync()
-        {
-            return await _cacheService.GetOrCreateAsync(
-                key: "grades_all",
-                factory: async () => await _coreApiClient.GetGradesAsync(),
-                expiration: TimeSpan.FromMinutes(30));
         }
     }
 }
