@@ -78,6 +78,9 @@ try
     builder.Services.AddMemoryCache();
     builder.Services.AddScoped<ICacheService, InMemoryCacheService>();
 
+    // Register External Data Cache
+    builder.Services.AddScoped<IExternalDataCache, ExternalDataCache>(); // Cannot be Singleton unless ICoreApiService and ICacheService are singleton as well
+
     // Register MediatR
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly
     (typeof(CreateRequestCommand).Assembly));

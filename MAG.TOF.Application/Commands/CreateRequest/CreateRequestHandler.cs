@@ -37,11 +37,17 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                 _logger.LogDebug("Creating request for UserId: {UserId}", command.UserId);
 
                 // Validate request and calculate business days
-                var businessDaysResult = await ValidateRequestAsync(command);
-                if (businessDaysResult.IsError)
+                var validationResult = await ValidateRequestAsync(command);
+                if (validationResult.IsError)
                 {
-                    return businessDaysResult.Errors;
+                    return validationResult.Errors;
                 }
+
+                // Calculate business days
+                int actualBusinessDays = _requestValidationService.CalculateBusinessDays(
+                    command.StartDate,
+                    command.EndDate);
+
 
                 // Map command to entity
                 var request = new Request
@@ -50,7 +56,7 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                     DepartmentId = command.DepartmentId,
                     StartDate = command.StartDate,
                     EndDate = command.EndDate,
-                    TotalBusinessDays = businessDaysResult.Value,
+                    TotalBusinessDays = actualBusinessDays,
                     ManagerId = command.ManagerId,
                     Status = command.Status
                 };
@@ -71,7 +77,7 @@ namespace MAG.TOF.Application.Commands.CreateRequests
         }
 
         // Validate request, calculate/ validate business days and return business days or Errors
-        private async Task<ErrorOr<int>> ValidateRequestAsync(CreateRequestCommand command)
+        private async Task<ErrorOr<Success>> ValidateRequestAsync(CreateRequestCommand command)
         {
             // validate user exists (using cached data)
             var userResult = await _externalDataValidator.ValidateUserExistsAsync(command.UserId);
@@ -141,7 +147,7 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                 return Error.Validation("Request.NoBusinessDays", "Total business days must be greater than 0");
             }
 
-            return actualBusinessDays;
+            return Result.Success;
         }
     }
 }

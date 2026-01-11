@@ -9,16 +9,16 @@ namespace MAG.TOF.Application.Commands.ApproveRequest
 {
     public class ApproveRequestHandler : IRequestHandler<ApproveRequestCommand, ErrorOr<Success>>
     {
-        private readonly ReferenceDataService _referenceservice;
+        private readonly ExternalDataValidator _externalDataValidator;
         private readonly IRequestRepository _repository;
         private readonly ILogger<ApproveRequestHandler> _logger;
 
         public ApproveRequestHandler(
-            ReferenceDataService referenceService,
+            ExternalDataValidator externalDataValidator,
             IRequestRepository repository,
             ILogger<ApproveRequestHandler> logger)
         {
-            _referenceservice = referenceService;
+            _externalDataValidator = externalDataValidator;
             _repository = repository;
             _logger = logger;
         }
@@ -50,7 +50,7 @@ namespace MAG.TOF.Application.Commands.ApproveRequest
                 }
 
                 // Check if manager exists and is valid
-                var managerResult = await _referenceservice.ValidateManagerExistsAndHasCorrectGradeAsync(command.LoggedUserId);
+                var managerResult = await _externalDataValidator.ValidateManagerExistsAndHasCorrectGradeAsync(command.LoggedUserId);
                 if (managerResult.IsError)
                 {
                     _logger.LogWarning("Manager {ManagerId} validation failed for approving request {RequestId}", command.LoggedUserId, command.RequestId);

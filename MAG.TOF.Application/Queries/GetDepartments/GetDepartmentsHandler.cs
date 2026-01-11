@@ -1,5 +1,6 @@
 ﻿using ErrorOr;
 using MAG.TOF.Application.DTOs;
+using MAG.TOF.Application.Interfaces;
 using MAG.TOF.Application.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -9,14 +10,14 @@ namespace MAG.TOF.Application.Queries.GetDepartments
     public class GetDepartmentsHandler : IRequestHandler<GetDepartmentsQuery, ErrorOr<List<DepartmentDto>>>
     {
 
-        private readonly ReferenceDataService _referenceDataService;
+        private readonly IExternalDataCache _externalDataCache;
         private readonly ILogger<GetDepartmentsHandler> _logger;
 
         public GetDepartmentsHandler(
-            ReferenceDataService referenceDataService,
+            IExternalDataCache externalDataCache,
             ILogger<GetDepartmentsHandler> logger)
         {
-            _referenceDataService = referenceDataService;
+            _externalDataCache = externalDataCache;
             _logger = logger;
         }
 
@@ -26,7 +27,7 @@ namespace MAG.TOF.Application.Queries.GetDepartments
             try
             {
                 _logger.LogInformation("Fetching departments from CORE API");
-                var departments = await _referenceDataService.GetCachedDepartmentsAsync();
+                var departments = await _externalDataCache.GetCachedDepartmentsAsync();
 
                 _logger.LogInformation("Successfully fetched {Departments} departments from CORE API", departments.Count);
                 return departments;

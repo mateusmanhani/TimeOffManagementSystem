@@ -2,7 +2,7 @@
 using MAG.TOF.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 
-namespace MAG.TOF.Application.Services
+namespace MAG.TOF.Infrastructure.Services
 {
     public class ExternalDataCache : IExternalDataCache
     {

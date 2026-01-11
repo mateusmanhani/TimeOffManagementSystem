@@ -35,6 +35,7 @@ namespace MAG.TOF.Application.Queries.GetUserRequests
                 if (requests == null)
                 {
                     _logger.LogInformation("No requests found for user with ID {UserId}", query.UserId);
+                    return new List<Request>();
                 }
                 return requests;
             }

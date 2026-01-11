@@ -11,16 +11,16 @@ namespace MAG.TOF.Application.Commands.RejectRequest
     public class RejectRequestHandler : IRequestHandler<RejectRequestCommand, ErrorOr<Success>>
     {
 
-        private readonly ReferenceDataService _referenceService;
+        private readonly ExternalDataValidator _externalDataValidator;
         private readonly IRequestRepository _repository;
         private readonly ILogger<ApproveRequestHandler> _logger;
 
         public RejectRequestHandler(
-            ReferenceDataService referenceService,
+            ExternalDataValidator externalDataValidator,
             IRequestRepository repository,
             ILogger<ApproveRequestHandler> logger)
         {
-            _referenceService = referenceService;
+            _externalDataValidator = externalDataValidator;
             _repository = repository;
             _logger = logger;
         }
@@ -50,7 +50,7 @@ namespace MAG.TOF.Application.Commands.RejectRequest
                 }
 
                 // Validate manager authorization
-                var managerResult = await _referenceService.ValidateManagerExistsAndHasCorrectGradeAsync(command.LoggedUserId);
+                var managerResult = await _externalDataValidator.ValidateManagerExistsAndHasCorrectGradeAsync(command.LoggedUserId);
                 if (managerResult.IsError)
                 {
                     _logger.LogError("Manager validation failed for ManagerId: {ManagerId}", command.LoggedUserId);

@@ -23,7 +23,7 @@ namespace MAG.TOF.Web.Endpoints
                 .DisableAntiforgery();
 
             // Get Pending requests for manager
-            group.MapGet("/pending/manager/{managerId}", async (int loggedUserId, IMediator mediator) =>
+            group.MapGet("/pending/manager/{loggedUserId}", async (int loggedUserId, IMediator mediator) =>
             {
                 var query = new GetPendingRequestsQuery(loggedUserId);
                 var result = await mediator.Send(query);

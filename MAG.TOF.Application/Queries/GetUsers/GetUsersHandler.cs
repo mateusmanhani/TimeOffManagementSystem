@@ -1,5 +1,6 @@
 ﻿using ErrorOr;
 using MAG.TOF.Application.DTOs;
+using MAG.TOF.Application.Interfaces;
 using MAG.TOF.Application.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -9,13 +10,13 @@ namespace MAG.TOF.Application.Queries.GetUsers
     public class GetUsersHandler : IRequestHandler<GetUsersQuery, ErrorOr<List<UserDto>>>
     {
         private readonly ILogger<GetUsersHandler> _logger;
-        private readonly ReferenceDataService _referenceService;
+        private readonly IExternalDataCache _externalDataCache;
 
         public GetUsersHandler(
-            ReferenceDataService referenceService,
+            IExternalDataCache externalDataCache,
             ILogger<GetUsersHandler> logger)
         {
-            _referenceService = referenceService;
+            _externalDataCache = externalDataCache;
             _logger = logger;
         }
 
@@ -25,7 +26,7 @@ namespace MAG.TOF.Application.Queries.GetUsers
             {
                 _logger.LogInformation("Fetching users (with caching)");
 
-                var users = await _referenceService.GetCachedUsersAsync();
+                var users = await _externalDataCache.GetCachedUsersAsync();
 
                 _logger.LogInformation("Successfully fetched {UserCount} users", users.Count);
                 return users;

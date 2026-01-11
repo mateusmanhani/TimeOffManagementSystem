@@ -7,11 +7,13 @@ namespace MAG.TOF.Application.Services
 {
     public class ExternalDataValidator
     {
-        private readonly ExternalDataCache _externalDataCache;
+        private readonly IExternalDataCache _externalDataCache;
         private readonly ILogger<ExternalDataValidator> _logger;
 
+        // todo create GradeLevel enum (in domain) and extension class for emthods like isManager() and use it here to check manager
+
         public ExternalDataValidator(
-            ExternalDataCache externalDataCache,
+            IExternalDataCache externalDataCache,
             ILogger<ExternalDataValidator> logger)
         {
             _externalDataCache = externalDataCache;

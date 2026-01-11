@@ -10,16 +10,16 @@ namespace MAG.TOF.Application.Queries.GetPendingRequests
     public class GetPendingRequestsHandler : IRequestHandler<GetPendingRequestsQuery, ErrorOr<List<Request>>>
     {
         private readonly IRequestRepository _repository;
-        private readonly ReferenceDataService _referenceDataService;
+        private readonly ExternalDataValidator _externalDataValidator;
         private readonly ILogger<GetPendingRequestsHandler> _logger;
 
         public GetPendingRequestsHandler(
             IRequestRepository requestRepository,
-            ReferenceDataService referenceDataService,
+            ExternalDataValidator externalDataValidator,
             ILogger<GetPendingRequestsHandler> logger)
         {
             _repository = requestRepository;
-            _referenceDataService = referenceDataService;
+            _externalDataValidator = externalDataValidator;
             _logger = logger;
         }
 
@@ -35,7 +35,7 @@ namespace MAG.TOF.Application.Queries.GetPendingRequests
                 }
 
                 // Ensure LoggedUserId has Manager grade
-                var managerResult = await _referenceDataService.ValidateManagerExistsAndHasCorrectGradeAsync(query.LoggedUserId);
+                var managerResult = await _externalDataValidator.ValidateManagerExistsAndHasCorrectGradeAsync(query.LoggedUserId);
                 if (managerResult.IsError)
                 {
                     _logger.LogWarning("User {UserId} is not a valid manager or does not exist.", query.LoggedUserId);
