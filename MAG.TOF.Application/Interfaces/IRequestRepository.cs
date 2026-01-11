@@ -1,9 +1,4 @@
 ﻿using MAG.TOF.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MAG.TOF.Application.Interfaces
 {
@@ -18,5 +13,6 @@ namespace MAG.TOF.Application.Interfaces
         Task <List<Request>> GetRequestsByUserIdAsync(int userId);
 
         Task<Request?> HasOverlappingRequestsAsync(int userId, DateTime startDate, DateTime endDate);
+        Task<List<Request>> GetPendingRequestsByManagerId(int loggedUserId);
     }
 }

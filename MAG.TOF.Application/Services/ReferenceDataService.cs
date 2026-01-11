@@ -5,16 +5,20 @@ using Microsoft.Extensions.Logging;
 
 namespace MAG.TOF.Application.Services
 {
-    public class ReferenceDataValidationService
+    public class ReferenceDataService
     {
         private readonly ICoreApiClient _coreApiClient;
         private readonly ICacheService _cacheService;
-        private readonly ILogger<ReferenceDataValidationService> _logger;
+        private readonly ILogger<ReferenceDataService> _logger;
 
-        public ReferenceDataValidationService(
+        private const string UsersKey = "users_all";
+        private const string DepartmentsKey = "departments_all";
+        private const string GradesKey = "grades_all";
+
+        public ReferenceDataService(
             ICoreApiClient coreApiClient,
             ICacheService cacheService,
-            ILogger<ReferenceDataValidationService> logger)
+            ILogger<ReferenceDataService> logger)
         {
             _coreApiClient = coreApiClient;
             _cacheService = cacheService;
@@ -82,27 +86,27 @@ namespace MAG.TOF.Application.Services
             return manager;
         }
 
-        // Private helper methods for caching
-        private async Task<List<UserDto>> GetCachedUsersAsync()
+        // Helper methods for caching
+        public async Task<List<UserDto>> GetCachedUsersAsync()
         {
             return await _cacheService.GetOrCreateAsync(
-                key: "users_all",
+                key: UsersKey,
                 factory: async () => await _coreApiClient.GetUsersAsync(),
                 expiration: TimeSpan.FromMinutes(30));
         }
 
-        private async Task<List<DepartmentDto>> GetCachedDepartmentsAsync()
+        public async Task<List<DepartmentDto>> GetCachedDepartmentsAsync()
         {
             return await _cacheService.GetOrCreateAsync(
-                key: "departments_all",
+                key: DepartmentsKey,
                 factory: async () => await _coreApiClient.GetDepartmentsAsync(),
                 expiration: TimeSpan.FromMinutes(30));
         }
 
-        private async Task<List<GradeDto>> GetCachedGradesAsync()
+        public async Task<List<GradeDto>> GetCachedGradesAsync()
         {
             return await _cacheService.GetOrCreateAsync(
-                key: "grades_all",
+                key: GradesKey,
                 factory: async () => await _coreApiClient.GetGradesAsync(),
                 expiration: TimeSpan.FromMinutes(30));
         }

@@ -14,12 +14,12 @@ namespace MAG.TOF.Application.Commands.CreateRequests
         private readonly IRequestRepository _repository;
         private readonly ILogger<CreateRequestHandler> _logger;
         private readonly RequestValidationService _validationService;
-        private readonly ReferenceDataValidationService _referenceValidation;
+        private readonly ReferenceDataService _referenceValidation;
 
         public CreateRequestHandler(IRequestRepository repository, 
             ILogger<CreateRequestHandler> logger, 
             RequestValidationService validationService,
-            ReferenceDataValidationService referenceValidation
+            ReferenceDataService referenceValidation
             )
         {
             _repository = repository;
@@ -47,6 +47,13 @@ namespace MAG.TOF.Application.Commands.CreateRequests
                 {
                     var managerResult = await _referenceValidation.ValidateManagerExistsAndHasCorrectGradeAsync(command.ManagerId.Value);
                     if (managerResult.IsError) return managerResult.Errors;
+                }
+
+                // Ensure user cannot set himself as approving manager
+                if (command.UserId == command.ManagerId)
+                {
+                    _logger.LogWarning("You cannot set yourself as approving manager on a request.");
+                    return Error.Conflict("Request.Conflict", "You cannot set yourself as approving manager on a request.");
                 }
 
                 // validate request
