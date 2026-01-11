@@ -10,3 +10,5 @@
 /MAG.TOF.Web/bin/Debug/net10.0
 /MAG.TOF.Web/obj
 /MAG.TOF.Application/obj
+/MAG.TOF.Domain/obj
+/MAG.TOF.Infrastructure/obj
