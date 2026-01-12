@@ -1,6 +1,6 @@
-using MAG.TOF.Application.Commands.CreateRequests;
+using MAG.TOF.Application.CQRS.Commands.CreateRequest;
 using MAG.TOF.Application.Interfaces;
-using MAG.TOF.Application.Services;
+using MAG.TOF.Application.Validation;
 using MAG.TOF.Domain.Services;
 using MAG.TOF.Infrastructure.Data;
 using MAG.TOF.Infrastructure.Repositories;
