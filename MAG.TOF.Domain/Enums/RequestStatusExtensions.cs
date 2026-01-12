@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Reflection;
+
 namespace MAG.TOF.Domain.Enums
 {
     public static class RequestStatusExtensions
@@ -71,15 +74,10 @@ namespace MAG.TOF.Domain.Enums
         /// </summary>
         public static string GetDescription(this RequestStatus status)
         {
-            return status switch
-            {
-                RequestStatus.Draft => "Draft - Not yet submitted",
-                RequestStatus.Pending => "Pending - Awaiting manager approval",
-                RequestStatus.Approved => "Approved - Request has been approved",
-                RequestStatus.Rejected => "Rejected - Request was rejected",
-                RequestStatus.Recalled => "Recalled - Request was recalled by user",
-                _ => "Unknown status"
-            };
+            return status.GetType()
+                .GetField(status.ToString())?
+                .GetCustomAttribute<DescriptionAttribute>()?
+                .Description ?? status.ToString();
         }
     }
 }
