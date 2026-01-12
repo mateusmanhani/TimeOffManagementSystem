@@ -89,7 +89,7 @@
 
         <!-- Form Action Buttons -->
         <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2">
-            <!-- Save Draft Button (Future Feature) -->
+            <!-- Save Draft Button -->
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Default"
                        OnClick="SaveDraft"
@@ -234,11 +234,72 @@
     }
 
     /// <summary>
-    /// Placeholder for future "Save Draft" functionality
+    /// Saves the request as a draft with Draft status
     /// </summary>
-    private void SaveDraft()
+    private async Task SaveDraft()
     {
-        Snackbar.Add("Draft saved (functionality not implemented).", Severity.Info);
+        _isSubmitting = true;
+
+        try
+        {
+            // Validate required fields for draft
+            if (model.UserId <= 0)
+            {
+                Snackbar.Add("User ID is required to save a draft.", Severity.Warning);
+                return;
+            }
+            if (model.DepartmentId <= 0)
+            {
+                Snackbar.Add("Department ID is required to save a draft.", Severity.Warning);
+                return;
+            }
+
+            if (!startDate.HasValue || !endDate.HasValue)
+            {
+                Snackbar.Add("Start and end dates are required to save a draft.", Severity.Warning);
+                return;
+            }
+
+            // Create command with Draft status
+            var command = new CreateRequestCommand(
+                UserId: model.UserId,
+                DepartmentId: model.DepartmentId,
+                StartDate: startDate!.Value,
+                EndDate: endDate!.Value,
+                ManagerId: model.ManagerId,
+                Status: RequestStatus.Draft
+            );
+
+            // Send command to backend via MediatR
+            var result = await Mediator.Send(command);
+
+            // Handle result using ErrorOr pattern
+            result.Match(
+                requestId =>
+                {
+                    // Success: Show notification
+                    Snackbar.Add($"Draft saved successfully! ID: {requestId}", Severity.Success);
+                    ResetForm();
+                    return requestId;
+                },
+                errors =>
+                {
+                    // Failure: Show error messages
+                    var errorMessage = string.Join(", ", errors.Select(e => e.Description));
+                    Snackbar.Add(errorMessage, Severity.Error);
+                    return 0;
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error during draft save");
+            Snackbar.Add("An unexpected error occurred while saving draft. Please try again.", Severity.Error);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
     }
 
     /// <summary>
