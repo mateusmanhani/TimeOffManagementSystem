@@ -81,13 +81,5 @@ namespace MAG.TOF.Domain.Enums
                 _ => "Unknown status"
             };
         }
-
-        /// <summary>
-        /// Checks if the enum value is valid
-        /// </summary>
-        public static bool IsValid(this RequestStatus status)
-        {
-            return Enum.IsDefined(typeof(RequestStatus), status);
-        }
     }
 }

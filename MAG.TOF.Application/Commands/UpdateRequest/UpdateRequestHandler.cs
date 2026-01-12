@@ -128,13 +128,6 @@ namespace MAG.TOF.Application.Commands.UpdateRequest
                 return Error.Validation("InvalidManagerId", "The manager ID must be a positive integer.");
             }
 
-            // Validate enum using extension method
-            if (!command.Status.IsValid())
-            {
-                _logger.LogWarning("Invalid Status: {Status}", command.Status);
-                return Error.Validation("InvalidStatus", "The status must be a valid RequestStatus value.");
-            }
-
             return null;
         }
     }
