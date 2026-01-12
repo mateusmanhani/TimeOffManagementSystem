@@ -19,17 +19,37 @@
         <!-- User and Department Selection Row -->
         <MudGrid>
             <MudItem xs="12" sm="6">
-                <MudNumericField @bind-Value="model.UserId"
-                                 Label="User ID"
-                                 Variant="Variant.Outlined"
-                                 HelperText="Enter the ID of the requesting user" />
+                <MudSelect @bind-Value="model.UserId"
+                            Label="User"
+                            Variant="Variant.Outlined"
+                            Required="true"
+                            HelperText="Select the User making the request"
+                            T="int?">
+                      @if (_users != null)
+                      {
+                      @foreach (var user in _users)
+                      {
+                            <MudSelectItem Value="@((int?)user.Id)">@user.FullName</MudSelectItem>
+                      }
+                    }
+                </MudSelect>
             </MudItem>
 
             <MudItem xs="12" sm="6">
-                <MudNumericField @bind-Value="model.DepartmentId"
-                                 Label="Department"
-                                 Variant="Variant.Outlined"
-                                 HelperText="Enter department ID" />
+                <MudSelect @bind-Value="model.DepartmentId"
+                           Label="Department"
+                           Variant="Variant.Outlined"
+                           Required="true"
+                           HelperText="Select Your Department"
+                           T="int?">
+                    @if (_departments != null)
+                    {
+                    @foreach (var department in _departments)
+                    {
+                        <MudSelectItem Value="@((int?)department.Id)">@department.Name</MudSelectItem>
+                    }
+                    }
+                </MudSelect>
             </MudItem>
         </MudGrid>
 
@@ -137,9 +157,17 @@
     // Manager Data from cache
     private List<UserDto>? _managers;
 
+    // Department Data from cache
+    private List<DepartmentDto>? _departments;
+
+    // User Data from cache
+    private List<UserDto>? _users;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadManagersAsync();
+        await LoadDepartmentsAsync();
+        await LoadUsersAsync();
     }
 
     /// <summary>
@@ -152,10 +180,20 @@
 
         try
         {
+            if (!model.UserId.HasValue || model.UserId.Value <= 0)
+            {
+                Snackbar.Add("User is required.", Severity.Warning);
+                return;
+            }
+            if (!model.DepartmentId.HasValue || model.DepartmentId.Value <= 0)
+            {
+                Snackbar.Add("Department is required.", Severity.Warning);
+                return;
+            }
             // Create command with form data
             var command = new CreateRequestCommand(
-                UserId: model.UserId,
-                DepartmentId: model.DepartmentId,
+                UserId: model.UserId.Value,
+                DepartmentId: model.DepartmentId.Value,
                 StartDate: startDate!.Value,
                 EndDate: endDate!.Value,
                 ManagerId: model.ManagerId,
@@ -195,44 +233,6 @@
         }
     }
 
-    private async Task LoadManagersAsync()
-    {
-        try
-        {
-            var allUsers = await ExternalDataCache.GetCachedUsersAsync();
-            var grades = await ExternalDataCache.GetCachedGradesAsync();
-
-            // Find the managers based on grade
-            var managerGrade = grades.
-            FirstOrDefault(g => g.Name.Contains("Manager", StringComparison.OrdinalIgnoreCase));
-
-            if (managerGrade == null)
-            {
-                Logger.LogWarning("Manager grade not found in cached grades");
-                _managers = new List<UserDto>();
-                return;
-            }
-
-            // Filter users by manager grade
-            _managers = allUsers
-            .Where(u => u.GradeId == managerGrade.Id)
-            .OrderBy(u => u.LastName)
-            .ToList();
-
-            if (_managers.Count == 0)
-            {
-                Logger.LogWarning("No managers found in cached users");
-                Snackbar.Add("No managers found in the system.", Severity.Warning);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to load managers from cache");
-            Snackbar.Add("Failed to load managers. Please refresh the page.", Severity.Error);
-            _managers = new List<UserDto>();
-        }
-    }
-
     /// <summary>
     /// Saves the request as a draft with Draft status
     /// </summary>
@@ -243,14 +243,14 @@
         try
         {
             // Validate required fields for draft
-            if (model.UserId <= 0)
+            if (!model.UserId.HasValue || model.UserId.Value <= 0)
             {
-                Snackbar.Add("User ID is required to save a draft.", Severity.Warning);
+                Snackbar.Add("User is required.", Severity.Warning);
                 return;
             }
-            if (model.DepartmentId <= 0)
+            if (!model.DepartmentId.HasValue || model.DepartmentId.Value <= 0)
             {
-                Snackbar.Add("Department ID is required to save a draft.", Severity.Warning);
+                Snackbar.Add("Department is required.", Severity.Warning);
                 return;
             }
 
@@ -262,8 +262,8 @@
 
             // Create command with Draft status
             var command = new CreateRequestCommand(
-                UserId: model.UserId,
-                DepartmentId: model.DepartmentId,
+                UserId: model.UserId.Value,
+                DepartmentId: model.DepartmentId.Value,
                 StartDate: startDate!.Value,
                 EndDate: endDate!.Value,
                 ManagerId: model.ManagerId,
@@ -299,6 +299,84 @@
         finally
         {
             _isSubmitting = false;
+        }
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        try
+        {
+            _users = await ExternalDataCache.GetCachedUsersAsync();
+
+            if (_users.Count == 0)
+            {
+                Logger.LogWarning("No users found in cached data");
+                Snackbar.Add("No users found in the system.", Severity.Warning);
+            }
+        }   
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load users from cache");
+            Snackbar.Add("Failed to load users. Please refresh the page.", Severity.Error);
+            _users = new List<UserDto>();
+        }
+    }
+
+    private async Task LoadDepartmentsAsync()
+    {
+        try
+        {
+            _departments = await ExternalDataCache.GetCachedDepartmentsAsync();
+
+            if (_departments.Count == 0)
+            {
+                Logger.LogWarning("No departments found in cached data");
+                Snackbar.Add("No departments found in the system.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load departments from cache");
+            Snackbar.Add("Failed to load departments. Please refresh the page.", Severity.Error);
+            _departments = new List<DepartmentDto>();
+        }
+    }
+
+    private async Task LoadManagersAsync()
+    {
+        try
+        {
+            var allUsers = await ExternalDataCache.GetCachedUsersAsync();
+            var grades = await ExternalDataCache.GetCachedGradesAsync();
+
+            // Find the managers based on grade
+            var managerGrade = grades.
+            FirstOrDefault(g => g.Name.Contains("Manager", StringComparison.OrdinalIgnoreCase));
+
+            if (managerGrade == null)
+            {
+                Logger.LogWarning("Manager grade not found in cached grades");
+                _managers = new List<UserDto>();
+                return;
+            }
+
+            // Filter users by manager grade
+            _managers = allUsers
+            .Where(u => u.GradeId == managerGrade.Id)
+            .OrderBy(u => u.LastName)
+            .ToList();
+
+            if (_managers.Count == 0)
+            {
+                Logger.LogWarning("No managers found in cached users");
+                Snackbar.Add("No managers found in the system.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load managers from cache");
+            Snackbar.Add("Failed to load managers. Please refresh the page.", Severity.Error);
+            _managers = new List<UserDto>();
         }
     }
 
@@ -343,8 +421,8 @@
     /// </summary>
     private class RequestFormModel
     {
-        public int UserId { get; set; }
-        public int DepartmentId { get; set; }
+        public int? UserId { get; set; }
+        public int? DepartmentId { get; set; }
         public int? ManagerId { get; set; }
     }
 }
