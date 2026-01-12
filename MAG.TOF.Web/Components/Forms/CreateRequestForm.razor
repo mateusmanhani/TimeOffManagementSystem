@@ -1,4 +1,6 @@
 ﻿@using MAG.TOF.Application.CQRS.Commands.CreateRequest
+@using MAG.TOF.Application.DTOs
+@using MAG.TOF.Application.Interfaces
 @using MAG.TOF.Domain.Enums
 @using MAG.TOF.Domain.Services
 @using MediatR
@@ -8,6 +10,7 @@
 @inject ILogger<CreateRequestForm> Logger
 @inject ISnackbar Snackbar
 @inject RequestValidationService ValidationService
+@inject IExternalDataCache ExternalDataCache
 
 <!-- MudBlazor Form with validation -->
 <MudForm @ref="_form">
@@ -53,7 +56,7 @@
         @if (startDate.HasValue && endDate.HasValue)
         {
             var businessDaysText = CalculateBusinessDays();
-            
+
             @if (businessDaysText == "Invalid")
             {
                 <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
@@ -68,11 +71,21 @@
             }
         }
 
-        <!-- Manager Selection (Optional) -->
-        <MudNumericField @bind-Value="model.ManagerId"
-                         Label="Approving Manager"
-                         Variant="Variant.Outlined"
-                         HelperText="Optional: Enter manager ID for approval routing" />
+        <!-- Manager Selection -->
+        <MudSelect @bind-Value="model.ManagerId"
+                   Label="Approving Manager"
+                   Variant="Variant.Outlined"
+                   Clearable="true"
+                   HelperText="Optional: Select manager for approval routing"
+                   T="int?">
+            @if (_managers != null)
+            {
+                @foreach (var manager in _managers)
+                {
+                    <MudSelectItem Value="@((int?)manager.Id)">@manager.FullName</MudSelectItem>
+                }
+            }
+        </MudSelect>
 
         <!-- Form Action Buttons -->
         <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2">
@@ -83,7 +96,7 @@
                        Disabled="@_isSubmitting">
                 Save Draft
             </MudButton>
-            
+
             <!-- Submit Button - Disabled while form is submitting -->
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
@@ -121,6 +134,14 @@
     private DateTime? startDate = DateTime.Today;
     private DateTime? endDate = DateTime.Today.AddDays(1);
 
+    // Manager Data from cache
+    private List<UserDto>? _managers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadManagersAsync();
+    }
+
     /// <summary>
     /// Handles form submission
     /// Validates data, sends command to backend via MediatR, handles response
@@ -137,7 +158,7 @@
                 DepartmentId: model.DepartmentId,
                 StartDate: startDate!.Value,
                 EndDate: endDate!.Value,
-                ManagerId: model.ManagerId > 0 ? model.ManagerId : null,
+                ManagerId: model.ManagerId,
                 Status: RequestStatus.Pending
             );
 
@@ -174,6 +195,44 @@
         }
     }
 
+    private async Task LoadManagersAsync()
+    {
+        try
+        {
+            var allUsers = await ExternalDataCache.GetCachedUsersAsync();
+            var grades = await ExternalDataCache.GetCachedGradesAsync();
+
+            // Find the managers based on grade
+            var managerGrade = grades.
+            FirstOrDefault(g => g.Name.Contains("Manager", StringComparison.OrdinalIgnoreCase));
+
+            if (managerGrade == null)
+            {
+                Logger.LogWarning("Manager grade not found in cached grades");
+                _managers = new List<UserDto>();
+                return;
+            }
+
+            // Filter users by manager grade
+            _managers = allUsers
+            .Where(u => u.GradeId == managerGrade.Id)
+            .OrderBy(u => u.LastName)
+            .ToList();
+
+            if (_managers.Count == 0)
+            {
+                Logger.LogWarning("No managers found in cached users");
+                Snackbar.Add("No managers found in the system.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load managers from cache");
+            Snackbar.Add("Failed to load managers. Please refresh the page.", Severity.Error);
+            _managers = new List<UserDto>();
+        }
+    }
+
     /// <summary>
     /// Placeholder for future "Save Draft" functionality
     /// </summary>
@@ -199,14 +258,14 @@
     /// </summary>
     private string CalculateBusinessDays()
     {
-        if (!startDate.HasValue || !endDate.HasValue) 
+        if (!startDate.HasValue || !endDate.HasValue)
             return "0";
 
         try
         {
             // Use domain service for calculation (single source of truth)
             int businessDays = ValidationService.CalculateBusinessDays(
-                startDate.Value, 
+                startDate.Value,
                 endDate.Value);
             return businessDays.ToString();
         }
@@ -225,6 +284,6 @@
     {
         public int UserId { get; set; }
         public int DepartmentId { get; set; }
-        public int ManagerId { get; set; }
+        public int? ManagerId { get; set; }
     }
 }
