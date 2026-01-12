@@ -80,7 +80,7 @@ try
 
     //  Register In-Memory Cache
     builder.Services.AddMemoryCache();
-    builder.Services.AddScoped<ICacheService, InMemoryCacheService>();
+    builder.Services.AddSingleton<ICacheService, InMemoryCacheService>();
 
     // Register External Data Cache
     builder.Services.AddScoped<IExternalDataCache, ExternalDataCache>(); // Cannot be Singleton unless ICoreApiService and ICacheService are singleton as well

@@ -72,7 +72,7 @@ namespace MAG.TOF.Application.CQRS.Commands.CreateRequest
             {
                 _logger.LogError(ex, "Error occurred while creating request for UserId: {UserId}",
                     command.UserId);
-                return Error.Failure("Request.CreateFailed", $"Database error: {errorDetails}");
+                return Error.Failure("Request.CreateFailed", "Error occurred while creating request for UserId: {UserId}");
             }
         }
 
