@@ -1,6 +1,6 @@
-using MAG.TOF.Application.Commands.CreateRequests;
+using MAG.TOF.Application.CQRS.Commands.CreateRequest;
 using MAG.TOF.Application.Interfaces;
-using MAG.TOF.Application.Services;
+using MAG.TOF.Application.Validation;
 using MAG.TOF.Domain.Services;
 using MAG.TOF.Infrastructure.Data;
 using MAG.TOF.Infrastructure.Repositories;
@@ -59,11 +59,12 @@ try
     builder.Services.AddScoped<IRequestRepository, RequestRepository>();
 
     // Register Validation Services
-    builder.Services.AddScoped<ReferenceDataService>();
+    builder.Services.AddScoped<ExternalDataValidator>();
+
     builder.Services.AddScoped<RequestValidationService>();
 
     // Register HttpClient for CORE API
-    builder.Services.AddHttpClient<ICoreApiClient, CoreApiService>(client =>
+    builder.Services.AddHttpClient<ICoreApiService, CoreApiService>(client =>
     {
         var baseUrl = builder.Configuration["CoreApi:BaseUrl"]
             ?? throw new InvalidOperationException("CoreApi:BaseUrl not configured in appsetting.json");
@@ -76,6 +77,9 @@ try
     //  Register In-Memory Cache
     builder.Services.AddMemoryCache();
     builder.Services.AddScoped<ICacheService, InMemoryCacheService>();
+
+    // Register External Data Cache
+    builder.Services.AddScoped<IExternalDataCache, ExternalDataCache>(); // Cannot be Singleton unless ICoreApiService and ICacheService are singleton as well
 
     // Register MediatR
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly

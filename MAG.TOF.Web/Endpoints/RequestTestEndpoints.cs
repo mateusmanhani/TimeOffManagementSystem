@@ -1,12 +1,12 @@
 using ErrorOr;
-using MAG.TOF.Application.Commands.ApproveRequest;
-using MAG.TOF.Application.Commands.CreateRequests;
-using MAG.TOF.Application.Commands.DeleteRequest;
-using MAG.TOF.Application.Commands.RecallRequest;
-using MAG.TOF.Application.Commands.RejectRequest;
-using MAG.TOF.Application.Commands.UpdateRequest;
-using MAG.TOF.Application.Queries.GetPendingRequests;
-using MAG.TOF.Application.Queries.GetUserRequests;
+using MAG.TOF.Application.CQRS.Commands.ApproveRequest;
+using MAG.TOF.Application.CQRS.Commands.CreateRequest;
+using MAG.TOF.Application.CQRS.Commands.DeleteRequest;
+using MAG.TOF.Application.CQRS.Commands.RecallRequest;
+using MAG.TOF.Application.CQRS.Commands.RejectRequest;
+using MAG.TOF.Application.CQRS.Commands.UpdateRequest;
+using MAG.TOF.Application.CQRS.Queries.GetPendingRequests;
+using MAG.TOF.Application.CQRS.Queries.GetUserRequests;
 using MediatR;
 
 namespace MAG.TOF.Web.Endpoints
@@ -23,7 +23,7 @@ namespace MAG.TOF.Web.Endpoints
                 .DisableAntiforgery();
 
             // Get Pending requests for manager
-            group.MapGet("/pending/manager/{managerId}", async (int loggedUserId, IMediator mediator) =>
+            group.MapGet("/pending/manager/{loggedUserId}", async (int loggedUserId, IMediator mediator) =>
             {
                 var query = new GetPendingRequestsQuery(loggedUserId);
                 var result = await mediator.Send(query);
@@ -69,8 +69,8 @@ namespace MAG.TOF.Web.Endpoints
                 return result.Match(
                     requests => Results.Ok(new 
                     { 
-                        Success = true, 
-                        Count = requests.Count, 
+                        Success = true,
+                        Count = requests.Count,
                         Requests = requests 
                     }),
                     errors => Results.BadRequest(new { Success = false, Errors = errors })

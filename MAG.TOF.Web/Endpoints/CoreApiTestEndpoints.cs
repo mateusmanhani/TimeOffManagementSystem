@@ -1,9 +1,7 @@
-using MAG.TOF.Application.Interfaces;
-using MAG.TOF.Application.Queries.GetDepartments;
-using MAG.TOF.Application.Queries.GetGrades;
-using MAG.TOF.Application.Queries.GetUsers;
+using MAG.TOF.Application.CQRS.Queries.GetDepartments;
+using MAG.TOF.Application.CQRS.Queries.GetGrades;
+using MAG.TOF.Application.CQRS.Queries.GetUsers;
 using MediatR;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace MAG.TOF.Web.Endpoints
 {

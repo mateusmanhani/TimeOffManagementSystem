@@ -1,18 +1,16 @@
 ﻿using MAG.TOF.Application.DTOs;
 using MAG.TOF.Application.Interfaces;
-using MAG.TOF.Application.Mapping;
-using MAG.TOF.Application.Models;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 
 namespace MAG.TOF.Infrastructure.Services
 {
-    public class CoreApiService : ICoreApiClient
+    public class CoreApiService : ICoreApiService
     {
         private readonly HttpClient _httpClient;
-        private readonly ILogger<CoreApiService> _logger;
+        private readonly ILogger<UserDto> _logger;
 
-        public CoreApiService(HttpClient httpClient, ILogger<CoreApiService> logger)
+        public CoreApiService(HttpClient httpClient, ILogger<UserDto> logger)
         {
             _httpClient = httpClient;
             _logger = logger;
@@ -24,8 +22,8 @@ namespace MAG.TOF.Infrastructure.Services
 
             try
             {
-                //  Call CoreApi read json response and deserialise into List<CoreApiUser>
-                var users = await _httpClient.GetFromJsonAsync<List<CoreApiUser>>("api/user");
+                //  Call CoreApi read json response and deserialise into List<UserDto>
+                var users = await _httpClient.GetFromJsonAsync<List<UserDto>>("api/user");
 
                 // Handle null respnse
                 if (users == null)
@@ -36,8 +34,8 @@ namespace MAG.TOF.Infrastructure.Services
 
                 _logger.LogInformation("Successfully fetched {Count} users from CORE API", users.Count);
 
-                // Map User list to UserDto list and return it
-                return users.ToDtoList();
+                // return user list
+                return users.ToList();
             }
             catch (HttpRequestException ex)
             {
