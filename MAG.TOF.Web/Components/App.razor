@@ -5,27 +5,38 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    
+    <!-- Asset preloading for performance -->
     <ResourcePreloader />
+    
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["MAG.TOF.Web.styles.css"]" />
     
-    <!-- MudBlazor CSS-->
+    <!-- MudBlazor Dependencies -->
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
 
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
-    <HeadOutlet />
+    
+    <!-- Head outlet for dynamic head content - MUST use InteractiveServer render mode -->
+    <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 
 <body>
-    <Routes />
+    <!-- Router component handles all page routing - MUST use InteractiveServer for interactivity -->
+    <Routes @rendermode="InteractiveServer" />
+    
+    <!-- Modal for SignalR reconnection -->
     <ReconnectModal />
+    
+    <!-- Blazor JavaScript runtime -->
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["Components/Account/Shared/PasskeySubmit.razor.js"]" type="module"></script>
 
-    <!-- MudBlazor JS-->
+    <!-- MudBlazor JavaScript for interactive components -->
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 </body>
 

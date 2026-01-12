@@ -1,10 +1,12 @@
 ﻿@using MudBlazor
 @implements IDisposable
 @inject NavigationManager NavigationManager
-@inject ILogger<NavMenu> Logger
 
+<!-- MudBlazor Navigation Menu Component -->
 <MudNavMenu>
-    <!-- New Request Button -->
+    
+    <!-- Primary Action Button: Create New Request -->
+    <!-- When clicked, invokes the callback passed from MainLayout -->
     <MudButton Variant="Variant.Filled"
                Color="Color.Primary"
                StartIcon="@Icons.Material.Filled.Add"
@@ -14,12 +16,14 @@
         New Request
     </MudButton>
 
-    <!-- Dashboard -->
+    <!-- Navigation Links -->
+    
+    <!-- Dashboard - Home page -->
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
         Dashboard
     </MudNavLink>
 
-    <!-- Requests (Expandable) -->
+    <!-- Requests Section - Expandable group with sub-items -->
     <MudNavGroup Title="Requests" Icon="@Icons.Material.Filled.Description" Expanded="true">
         <MudNavLink Href="requests/my" Icon="@Icons.Material.Filled.Person">
             My Requests
@@ -29,26 +33,26 @@
         </MudNavLink>
     </MudNavGroup>
 
-    <!-- Calendar -->
+    <!-- Other Navigation Items -->
     <MudNavLink Href="calendar" Icon="@Icons.Material.Filled.CalendarToday">
         Calendar
     </MudNavLink>
 
-    <!-- Reports -->
     <MudNavLink Href="reports" Icon="@Icons.Material.Filled.Assessment">
         Reports
     </MudNavLink>
 
-    <!-- Settings -->
     <MudNavLink Href="settings" Icon="@Icons.Material.Filled.Settings">
         Settings
     </MudNavLink>
 
+    <!-- Divider separates main navigation from auth section -->
     <MudDivider Class="my-4" />
 
-    <!-- Auth Section -->
+    <!-- Authentication Section - Shows different options based on login state -->
     <AuthorizeView>
         <Authorized>
+            <!-- User is logged in -->
             <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.AccountCircle">
                 @context.User.Identity?.Name
             </MudNavLink>
@@ -57,6 +61,7 @@
             </MudNavLink>
         </Authorized>
         <NotAuthorized>
+            <!-- User is not logged in -->
             <MudNavLink Href="Account/Register" Icon="@Icons.Material.Filled.PersonAdd">
                 Register
             </MudNavLink>
@@ -68,6 +73,10 @@
 </MudNavMenu>
 
 @code {
+    /// <summary>
+    /// Event callback passed from MainLayout
+    /// Used to notify parent when "New Request" button is clicked
+    /// </summary>
     [Parameter]
     public EventCallback OnNewRequestClick { get; set; }
 
@@ -75,36 +84,44 @@
 
     protected override void OnInitialized()
     {
+        // Track current URL for navigation highlighting
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        
+        // Subscribe to navigation changes to update active link styling
         NavigationManager.LocationChanged += OnLocationChanged;
-        Logger.LogInformation("NavMenu initialized. OnNewRequestClick HasDelegate: {HasDelegate}", OnNewRequestClick.HasDelegate);
     }
 
+    /// <summary>
+    /// Updates current URL when user navigates to a different page
+    /// Triggers re-render to highlight active navigation link
+    /// </summary>
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
         StateHasChanged();
     }
 
+    /// <summary>
+    /// Handles "New Request" button click
+    /// Invokes the callback to open the right drawer in MainLayout
+    /// </summary>
     private async Task HandleNewRequestClick()
     {
-        Logger.LogInformation("New Request button clicked!");
-        if (OnNewRequestClick.HasDelegate)
-        {
-            Logger.LogInformation("Invoking OnNewRequestClick callback");
-            await OnNewRequestClick.InvokeAsync();
-        }
-        else
-        {
-            Logger.LogWarning("OnNewRequestClick has no delegate attached!");
-        }
+        await OnNewRequestClick.InvokeAsync();
     }
 
+    /// <summary>
+    /// Logs out the current user
+    /// Navigates to logout endpoint with full page reload
+    /// </summary>
     private void Logout()
     {
         NavigationManager.NavigateTo("/Account/Logout", forceLoad: true);
     }
 
+    /// <summary>
+    /// Cleanup: Unsubscribe from navigation events when component is disposed
+    /// </summary>
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;

@@ -3,80 +3,95 @@
 @using MAG.TOF.Domain.Services
 @using MediatR
 @using MudBlazor
+
 @inject IMediator Mediator
 @inject ILogger<CreateRequestForm> Logger
 @inject ISnackbar Snackbar
 @inject RequestValidationService ValidationService
 
-<MudForm @ref="_form" @bind-IsValid="@_formIsValid">
+<!-- MudBlazor Form with validation -->
+<MudForm @ref="_form">
     <MudStack Spacing="3" Class="pa-4">
 
-        <!-- User and Deparment row-->
+        <!-- User and Department Selection Row -->
         <MudGrid>
             <MudItem xs="12" sm="6">
                 <MudNumericField @bind-Value="model.UserId"
                                  Label="User ID"
-                                 Required="true"
                                  Variant="Variant.Outlined"
-                                 RequiredError="User ID is required" />
+                                 HelperText="Enter the ID of the requesting user" />
             </MudItem>
 
             <MudItem xs="12" sm="6">
                 <MudNumericField @bind-Value="model.DepartmentId"
                                  Label="Department"
                                  Variant="Variant.Outlined"
-                                 Required="true"
-                                 RequiredError="Department is required" />
+                                 HelperText="Enter department ID" />
             </MudItem>
         </MudGrid>
 
-        <!-- Date Range-->
+        <!-- Date Range Selection -->
         <MudGrid>
             <MudItem xs="12" sm="6">
                 <MudDatePicker @bind-Date="startDate"
                                Label="Date From"
                                Variant="Variant.Outlined"
-                               Required="true"
-                               MinDate="DateTime.Today" />
+                               MinDate="DateTime.Today"
+                               HelperText="Start date cannot be in the past" />
             </MudItem>
 
             <MudItem xs="12" sm="6">
                 <MudDatePicker @bind-Date="endDate"
                                Label="Date To"
                                Variant="Variant.Outlined"
-                               Required="true"
-                               MinDate="startDate ?? DateTime.Today" />
+                               MinDate="startDate ?? DateTime.Today"
+                               HelperText="End date must be after start date" />
             </MudItem>
         </MudGrid>
 
-        <!-- Business Days info-->
+        <!-- Business Days Calculation Display -->
         @if (startDate.HasValue && endDate.HasValue)
         {
-            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
-                <strong>Total: @CalculateBusinessDays() Business Days</strong>
-            </MudAlert>
+            var businessDaysText = CalculateBusinessDays();
+            
+            @if (businessDaysText == "Invalid")
+            {
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+                    Invalid date range - end date must be after start date
+                </MudAlert>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                    <strong>Total: @businessDaysText Business Days</strong> (Excluding Weekends)
+                </MudAlert>
+            }
         }
 
-        <!-- Manager Selection -->
+        <!-- Manager Selection (Optional) -->
         <MudNumericField @bind-Value="model.ManagerId"
                          Label="Approving Manager"
                          Variant="Variant.Outlined"
-                         HelperText="Enter manager ID" />
+                         HelperText="Optional: Enter manager ID for approval routing" />
 
-        <!-- Action Buttons -->
+        <!-- Form Action Buttons -->
         <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2">
+            <!-- Save Draft Button (Future Feature) -->
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Default"
                        OnClick="SaveDraft"
                        Disabled="@_isSubmitting">
                 Save Draft
             </MudButton>
+            
+            <!-- Submit Button - Disabled while form is submitting -->
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        OnClick="HandleSubmit"
                        Disabled="@_isSubmitting">
                 @if (_isSubmitting)
                 {
+                    <!-- Show loading indicator during submission -->
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" />
                     <MudText Class="ml-2">Submitting...</MudText>
                 }
@@ -90,25 +105,33 @@
 </MudForm>
 
 @code {
-        [Parameter]
-        public EventCallback OnSuccess { get; set; }
+    /// <summary>
+    /// Callback invoked when form is successfully submitted
+    /// Used by parent (MainLayout) to close the drawer
+    /// </summary>
+    [Parameter]
+    public EventCallback OnSuccess { get; set; }
 
+    // Form references and state
     private MudForm? _form;
-    private bool _formIsValid;
     private bool _isSubmitting = false;
 
+    // Form data model
     private RequestFormModel model = new();
     private DateTime? startDate = DateTime.Today;
     private DateTime? endDate = DateTime.Today.AddDays(1);
 
+    /// <summary>
+    /// Handles form submission
+    /// Validates data, sends command to backend via MediatR, handles response
+    /// </summary>
     private async Task HandleSubmit()
     {
-        if (_form == null || !_formIsValid) return;
-
         _isSubmitting = true;
 
         try
         {
+            // Create command with form data
             var command = new CreateRequestCommand(
                 UserId: model.UserId,
                 DepartmentId: model.DepartmentId,
@@ -118,18 +141,22 @@
                 Status: RequestStatus.Pending
             );
 
+            // Send command to backend via MediatR (CQRS pattern)
             var result = await Mediator.Send(command);
 
+            // Handle result using ErrorOr pattern
             result.Match(
                 requestId =>
                 {
-                    Snackbar.Add($"Request created successfully with ID: {requestId}", Severity.Success);
+                    // Success: Show notification and close drawer
+                    Snackbar.Add($"Request created successfully! ID: {requestId}", Severity.Success);
                     ResetForm();
-                    OnSuccess.InvokeAsync();
+                    OnSuccess.InvokeAsync();  // Notify parent to close drawer
                     return requestId;
                 },
                 errors =>
                 {
+                    // Failure: Show error messages
                     var errorMessage = string.Join(", ", errors.Select(e => e.Description));
                     Snackbar.Add(errorMessage, Severity.Error);
                     return 0;
@@ -147,11 +174,17 @@
         }
     }
 
+    /// <summary>
+    /// Placeholder for future "Save Draft" functionality
+    /// </summary>
     private void SaveDraft()
     {
         Snackbar.Add("Draft saved (functionality not implemented).", Severity.Info);
     }
 
+    /// <summary>
+    /// Resets form to initial state after successful submission
+    /// </summary>
     private void ResetForm()
     {
         model = new RequestFormModel();
@@ -160,13 +193,18 @@
         _form?.ResetValidation();
     }
 
+    /// <summary>
+    /// Calculates business days between selected dates
+    /// Uses domain service to ensure consistent calculation logic
+    /// </summary>
     private string CalculateBusinessDays()
     {
-        if (!startDate.HasValue || !endDate.HasValue) return "0";
+        if (!startDate.HasValue || !endDate.HasValue) 
+            return "0";
 
         try
         {
-            // Use domain service
+            // Use domain service for calculation (single source of truth)
             int businessDays = ValidationService.CalculateBusinessDays(
                 startDate.Value, 
                 endDate.Value);
@@ -175,12 +213,14 @@
         catch (ArgumentException)
         {
             // Domain service throws if endDate < startDate
-            // UI should show warning instead
             return "Invalid";
         }
-
     }
 
+    /// <summary>
+    /// Form model for data binding
+    /// Simplified model with only user input fields
+    /// </summary>
     private class RequestFormModel
     {
         public int UserId { get; set; }

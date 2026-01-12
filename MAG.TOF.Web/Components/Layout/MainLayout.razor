@@ -1,20 +1,22 @@
-﻿@rendermode InteractiveServer
-@using MudBlazor
+﻿@using MudBlazor
 @using MAG.TOF.Web.Components.Forms
 @inherits LayoutComponentBase
-@inject ILogger<MainLayout> Logger
 
-<MudThemeProvider />
-<MudPopoverProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
+<!-- MudBlazor Providers: Required for MudBlazor components to work -->
+<MudThemeProvider />        <!-- Provides theme/styling configuration -->
+<MudPopoverProvider />      <!-- Enables popovers and tooltips -->
+<MudDialogProvider />       <!-- Enables modal dialogs -->
+<MudSnackbarProvider />     <!-- Enables toast notifications -->
 
+<!-- Main Layout Structure -->
 <MudLayout>
-    <!-- Left Sidebar (Navigation Drawer) -->
+    <!-- Left Sidebar Navigation Drawer (Always visible) -->
     <MudDrawer @bind-Open="@_drawerOpen" 
                Elevation="2" 
                Variant="@DrawerVariant.Persistent"
                ClipMode="DrawerClipMode.Always">
+        
+        <!-- Drawer Header with Logo and Title -->
         <MudDrawerHeader>
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                 <MudIcon Icon="@Icons.Material.Filled.Bolt" Color="Color.Primary" Size="Size.Large" />
@@ -24,46 +26,44 @@
         
         <MudDivider />
         
-        <!-- TEST: Direct button to test drawer -->
-        <MudButton Color="Color.Error" OnClick="@OpenRequestDrawer" Class="ma-2">
-            TEST: Open Drawer
-        </MudButton>
-        
+        <!-- Navigation Menu Component - Pass callback to open right drawer -->
         <NavMenu OnNewRequestClick="@OpenRequestDrawer" />
     </MudDrawer>
 
-    <!-- Top AppBar -->
+    <!-- Top Application Bar -->
     <MudAppBar Elevation="1">
+        <!-- Menu button to toggle left sidebar -->
         <MudIconButton Icon="@Icons.Material.Filled.Menu" 
                        Color="Color.Inherit" 
                        Edge="Edge.Start" 
                        OnClick="@ToggleDrawer" />
+        
         <MudText Typo="Typo.h6">Holiday Request System</MudText>
+        
+        <!-- Spacer pushes remaining items to the right -->
         <MudSpacer />
         
-        <!-- TEST: Button in top bar -->
-        <MudButton Color="Color.Warning" OnClick="@OpenRequestDrawer" Variant="Variant.Filled" Class="mr-2">
-            TEST Open
-        </MudButton>
-        
+        <!-- Action icons in top bar -->
         <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
         <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
     </MudAppBar>
 
-    <!-- Main Content Area -->
+    <!-- Main Content Area - Where pages are rendered -->
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-            @Body
+            @Body  <!-- Pages render here (Home, CreateRequest, etc.) -->
         </MudContainer>
     </MudMainContent>
 
-    <!-- Right Drawer for New Request Form -->
+    <!-- Right Drawer for New Request Form (Slides in from right when opened) -->
     <MudDrawer Open="@_requestDrawerOpen" 
                OpenChanged="@OnRightDrawerOpenChanged"
                Anchor="Anchor.End" 
                Elevation="2"
                Width="450px"
                Variant="@DrawerVariant.Temporary">
+        
+        <!-- Drawer Header with Title and Close Button -->
         <MudDrawerHeader>
             <MudText Typo="Typo.h6">New Request Entry</MudText>
             <MudSpacer />
@@ -74,52 +74,53 @@
         
         <MudDivider />
         
+        <!-- Form Content - Automatically scrollable if content overflows -->
         <MudDrawerContainer>
+            <!-- CreateRequestForm component - Pass callback to close drawer on success -->
             <CreateRequestForm OnSuccess="@CloseRequestDrawer" />
         </MudDrawerContainer>
     </MudDrawer>
 </MudLayout>
 
-<MudText Class="pa-4" Typo="Typo.caption" Color="Color.Error">
-    DEBUG: Right drawer is @(_requestDrawerOpen ? "OPEN" : "CLOSED")
-</MudText>
-
 @code {
-    private bool _drawerOpen = true;
-    private bool _requestDrawerOpen = false;
+    // State variables to control drawer visibility
+    private bool _drawerOpen = true;           // Left sidebar drawer (navigation)
+    private bool _requestDrawerOpen = false;   // Right drawer (form)
 
-    protected override void OnInitialized()
-    {
-        Logger.LogInformation("MainLayout initialized. Left drawer open: {LeftOpen}, Right drawer open: {RightOpen}", 
-            _drawerOpen, _requestDrawerOpen);
-    }
-
+    /// <summary>
+    /// Toggles the left navigation drawer open/closed
+    /// Called by menu button in top app bar
+    /// </summary>
     private void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
-        Logger.LogInformation("Left drawer toggled to: {IsOpen}", _drawerOpen);
     }
 
+    /// <summary>
+    /// Opens the right drawer to show the create request form
+    /// Called by "New Request" button in NavMenu
+    /// </summary>
     private void OpenRequestDrawer()
     {
-        Logger.LogInformation("OpenRequestDrawer called! Setting _requestDrawerOpen to true");
         _requestDrawerOpen = true;
-        StateHasChanged(); // Force UI update
-        Logger.LogInformation("Right drawer state is now: {IsOpen}", _requestDrawerOpen);
     }
 
+    /// <summary>
+    /// Event handler for when right drawer open state changes
+    /// Updates local state to match drawer state
+    /// </summary>
     private void OnRightDrawerOpenChanged(bool isOpen)
     {
-        Logger.LogInformation("Right drawer OpenChanged event: {IsOpen}", isOpen);
         _requestDrawerOpen = isOpen;
-        StateHasChanged();
     }
 
+    /// <summary>
+    /// Closes the right drawer
+    /// Called when form is successfully submitted or close button is clicked
+    /// </summary>
     private void CloseRequestDrawer()
     {
-        Logger.LogInformation("CloseRequestDrawer called! Setting _requestDrawerOpen to false");
         _requestDrawerOpen = false;
-        StateHasChanged(); // Force UI update
     }
 }
 
