@@ -1,23 +1,125 @@
-﻿@inherits LayoutComponentBase
+﻿@rendermode InteractiveServer
+@using MudBlazor
+@using MAG.TOF.Web.Components.Forms
+@inherits LayoutComponentBase
+@inject ILogger<MainLayout> Logger
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
-    <main>
-        <div class="top-row px-4">
-            <div class="top-row-title">Holiday Request System</div>
-        </div>
+<MudLayout>
+    <!-- Left Sidebar (Navigation Drawer) -->
+    <MudDrawer @bind-Open="@_drawerOpen" 
+               Elevation="2" 
+               Variant="@DrawerVariant.Persistent"
+               ClipMode="DrawerClipMode.Always">
+        <MudDrawerHeader>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.Bolt" Color="Color.Primary" Size="Size.Large" />
+                <MudText Typo="Typo.h6">MAG.TOF HR</MudText>
+            </MudStack>
+        </MudDrawerHeader>
+        
+        <MudDivider />
+        
+        <!-- TEST: Direct button to test drawer -->
+        <MudButton Color="Color.Error" OnClick="@OpenRequestDrawer" Class="ma-2">
+            TEST: Open Drawer
+        </MudButton>
+        
+        <NavMenu OnNewRequestClick="@OpenRequestDrawer" />
+    </MudDrawer>
 
-        <article class="content px-4">
+    <!-- Top AppBar -->
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" 
+                       Color="Color.Inherit" 
+                       Edge="Edge.Start" 
+                       OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6">Holiday Request System</MudText>
+        <MudSpacer />
+        
+        <!-- TEST: Button in top bar -->
+        <MudButton Color="Color.Warning" OnClick="@OpenRequestDrawer" Variant="Variant.Filled" Class="mr-2">
+            TEST Open
+        </MudButton>
+        
+        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
+        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
+    </MudAppBar>
+
+    <!-- Main Content Area -->
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
             @Body
-        </article>
-    </main>
-</div>
+        </MudContainer>
+    </MudMainContent>
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+    <!-- Right Drawer for New Request Form -->
+    <MudDrawer Open="@_requestDrawerOpen" 
+               OpenChanged="@OnRightDrawerOpenChanged"
+               Anchor="Anchor.End" 
+               Elevation="2"
+               Width="450px"
+               Variant="@DrawerVariant.Temporary">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">New Request Entry</MudText>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                          Color="Color.Default" 
+                          OnClick="@CloseRequestDrawer" />
+        </MudDrawerHeader>
+        
+        <MudDivider />
+        
+        <MudDrawerContainer>
+            <CreateRequestForm OnSuccess="@CloseRequestDrawer" />
+        </MudDrawerContainer>
+    </MudDrawer>
+</MudLayout>
+
+<MudText Class="pa-4" Typo="Typo.caption" Color="Color.Error">
+    DEBUG: Right drawer is @(_requestDrawerOpen ? "OPEN" : "CLOSED")
+</MudText>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _requestDrawerOpen = false;
+
+    protected override void OnInitialized()
+    {
+        Logger.LogInformation("MainLayout initialized. Left drawer open: {LeftOpen}, Right drawer open: {RightOpen}", 
+            _drawerOpen, _requestDrawerOpen);
+    }
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+        Logger.LogInformation("Left drawer toggled to: {IsOpen}", _drawerOpen);
+    }
+
+    private void OpenRequestDrawer()
+    {
+        Logger.LogInformation("OpenRequestDrawer called! Setting _requestDrawerOpen to true");
+        _requestDrawerOpen = true;
+        StateHasChanged(); // Force UI update
+        Logger.LogInformation("Right drawer state is now: {IsOpen}", _requestDrawerOpen);
+    }
+
+    private void OnRightDrawerOpenChanged(bool isOpen)
+    {
+        Logger.LogInformation("Right drawer OpenChanged event: {IsOpen}", isOpen);
+        _requestDrawerOpen = isOpen;
+        StateHasChanged();
+    }
+
+    private void CloseRequestDrawer()
+    {
+        Logger.LogInformation("CloseRequestDrawer called! Setting _requestDrawerOpen to false");
+        _requestDrawerOpen = false;
+        StateHasChanged(); // Force UI update
+    }
+}
+

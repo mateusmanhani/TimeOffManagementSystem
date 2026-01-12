@@ -1,0 +1,190 @@
+﻿@using MAG.TOF.Application.CQRS.Commands.CreateRequest
+@using MAG.TOF.Domain.Enums
+@using MAG.TOF.Domain.Services
+@using MediatR
+@using MudBlazor
+@inject IMediator Mediator
+@inject ILogger<CreateRequestForm> Logger
+@inject ISnackbar Snackbar
+@inject RequestValidationService ValidationService
+
+<MudForm @ref="_form" @bind-IsValid="@_formIsValid">
+    <MudStack Spacing="3" Class="pa-4">
+
+        <!-- User and Deparment row-->
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudNumericField @bind-Value="model.UserId"
+                                 Label="User ID"
+                                 Required="true"
+                                 Variant="Variant.Outlined"
+                                 RequiredError="User ID is required" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudNumericField @bind-Value="model.DepartmentId"
+                                 Label="Department"
+                                 Variant="Variant.Outlined"
+                                 Required="true"
+                                 RequiredError="Department is required" />
+            </MudItem>
+        </MudGrid>
+
+        <!-- Date Range-->
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudDatePicker @bind-Date="startDate"
+                               Label="Date From"
+                               Variant="Variant.Outlined"
+                               Required="true"
+                               MinDate="DateTime.Today" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudDatePicker @bind-Date="endDate"
+                               Label="Date To"
+                               Variant="Variant.Outlined"
+                               Required="true"
+                               MinDate="startDate ?? DateTime.Today" />
+            </MudItem>
+        </MudGrid>
+
+        <!-- Business Days info-->
+        @if (startDate.HasValue && endDate.HasValue)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                <strong>Total: @CalculateBusinessDays() Business Days</strong>
+            </MudAlert>
+        }
+
+        <!-- Manager Selection -->
+        <MudNumericField @bind-Value="model.ManagerId"
+                         Label="Approving Manager"
+                         Variant="Variant.Outlined"
+                         HelperText="Enter manager ID" />
+
+        <!-- Action Buttons -->
+        <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2">
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       OnClick="SaveDraft"
+                       Disabled="@_isSubmitting">
+                Save Draft
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="HandleSubmit"
+                       Disabled="@_isSubmitting">
+                @if (_isSubmitting)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ml-2">Submitting...</MudText>
+                }
+                else
+                {
+                    <span>Submit</span>
+                }
+            </MudButton>
+        </MudStack>
+    </MudStack>
+</MudForm>
+
+@code {
+        [Parameter]
+        public EventCallback OnSuccess { get; set; }
+
+    private MudForm? _form;
+    private bool _formIsValid;
+    private bool _isSubmitting = false;
+
+    private RequestFormModel model = new();
+    private DateTime? startDate = DateTime.Today;
+    private DateTime? endDate = DateTime.Today.AddDays(1);
+
+    private async Task HandleSubmit()
+    {
+        if (_form == null || !_formIsValid) return;
+
+        _isSubmitting = true;
+
+        try
+        {
+            var command = new CreateRequestCommand(
+                UserId: model.UserId,
+                DepartmentId: model.DepartmentId,
+                StartDate: startDate!.Value,
+                EndDate: endDate!.Value,
+                ManagerId: model.ManagerId > 0 ? model.ManagerId : null,
+                Status: RequestStatus.Pending
+            );
+
+            var result = await Mediator.Send(command);
+
+            result.Match(
+                requestId =>
+                {
+                    Snackbar.Add($"Request created successfully with ID: {requestId}", Severity.Success);
+                    ResetForm();
+                    OnSuccess.InvokeAsync();
+                    return requestId;
+                },
+                errors =>
+                {
+                    var errorMessage = string.Join(", ", errors.Select(e => e.Description));
+                    Snackbar.Add(errorMessage, Severity.Error);
+                    return 0;
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error during request creation");
+            Snackbar.Add("An unexpected error occurred. Please try again.", Severity.Error);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void SaveDraft()
+    {
+        Snackbar.Add("Draft saved (functionality not implemented).", Severity.Info);
+    }
+
+    private void ResetForm()
+    {
+        model = new RequestFormModel();
+        startDate = DateTime.Today;
+        endDate = DateTime.Today.AddDays(1);
+        _form?.ResetValidation();
+    }
+
+    private string CalculateBusinessDays()
+    {
+        if (!startDate.HasValue || !endDate.HasValue) return "0";
+
+        try
+        {
+            // Use domain service
+            int businessDays = ValidationService.CalculateBusinessDays(
+                startDate.Value, 
+                endDate.Value);
+            return businessDays.ToString();
+        }
+        catch (ArgumentException)
+        {
+            // Domain service throws if endDate < startDate
+            // UI should show warning instead
+            return "Invalid";
+        }
+
+    }
+
+    private class RequestFormModel
+    {
+        public int UserId { get; set; }
+        public int DepartmentId { get; set; }
+        public int ManagerId { get; set; }
+    }
+}

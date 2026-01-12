@@ -12,6 +12,7 @@ using MAG.TOF.Web.Endpoints;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using MudBlazor.Services;
 using NLog;
 using NLog.Web;
 
@@ -62,6 +63,9 @@ try
     builder.Services.AddScoped<ExternalDataValidator>();
 
     builder.Services.AddScoped<RequestValidationService>();
+
+    // Register MudBlazor Services
+    builder.Services.AddMudServices();
 
     // Register HttpClient for CORE API
     builder.Services.AddHttpClient<ICoreApiService, CoreApiService>(client =>
