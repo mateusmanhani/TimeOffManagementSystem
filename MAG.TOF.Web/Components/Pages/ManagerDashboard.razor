@@ -1,0 +1,309 @@
+﻿@page "/manager-dashboard"
+@using MAG.TOF.Application.CQRS.Queries.GetPendingRequests
+@using MAG.TOF.Application.DTOs
+@using MAG.TOF.Application.Interfaces
+@using MAG.TOF.Domain.Entities
+@using MAG.TOF.Domain.Enums
+@using MediatR
+@using MudBlazor;
+
+@inject ISnackbar Snackbar;
+@inject IExternalDataCache ExternalDataCache;
+@inject IMediator Mediator;
+
+<PageTitle>Manager Dashboard</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" GutterBottom="true" Class="mt-4"> Manager DashBoard</MudText>
+
+    @* Manager Selection Dropdown*@
+    <MudPaper MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+        <MudSelect @bind-Value="_selectedManagerId"
+                   Label="Select Manager"
+                   Variant="Variant.Outlined"
+                   T="int?"
+                   Placeholder="Choose a manager to view their pending requests">
+            @if (_managers != null)
+            {
+                @foreach (var manager in _managers)
+                {
+                    <MudSelectItem Value="@((int?)manager.Id)">@manager.FullName</MudSelectItem>
+                }
+            }
+        </MudSelect>
+
+        @* Load Button*@
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Class="mt-3"
+                   OnClick="LoadPendingRequests"
+                   Disabled="@(!_selectedManagerId.HasValue || _isLoading)">
+            @if (_isLoading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                <span class="ml-2">Loading...</span>
+            }
+            else
+            {
+                <span>Load Requests</span>
+            }
+        </MudButton>
+    </MudPaper>
+
+
+    <MudGrid Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="d-flex flex-row pa-4" Elevation="3">
+                <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty"
+                         Color="Color.Info"
+                         Size="Size.Large"
+                         Class="mr-4 align-self-center" />
+                <div>
+                    <MudText Typo="Typo.h4">@_pendingCount</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Info"><b>Pending</b></MudText>
+                    <MudText Typo="Typo.caption">Awaiting Approval</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="d-flex flex-row pa-4" Elevation="3">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                         Color="Color.Success"
+                         Size="Size.Large"
+                         Class="mr-4 align-self-center" />
+                <div>
+                    <MudText Typo="Typo.h4">@_approvedCount</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Success"><b>Approved</b></MudText>
+                    <MudText Typo="Typo.caption">This Period</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="d-flex flex-row pa-4" Elevation="3">
+                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Large" Class="mr-4 align-self-center" />
+                <div>
+                    <MudText Typo="Typo.h4">@_rejectedCount</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Error"><b>Rejected</b></MudText>
+                    <MudText Typo="Typo.caption">This Period</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="d-flex flex-row pa-4" Elevation="3">
+                <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Color="Color.Primary" Size="Size.Large" Class="mr-4 align-self-center" />
+                <div>
+                    <MudText Typo="Typo.h4">@_totalCount</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Primary"><b>Total</b></MudText>
+                    <MudText Typo="Typo.caption">All Requests</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h5" Class="mb-2">Recent Requests</MudText>
+
+    @if (_isLoading)
+    {
+        <MudPaper Class="pa-6 d-flex justify-center" Elevation="3">
+            <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+        </MudPaper>
+    }
+    else if (_allRequests == null || !_allRequests.Any())
+    {
+        <MudPaper Class="pa-6" Elevation="3">
+            <MudText Typo="Typo.body1" Align="Align.Center">
+                @if (!_selectedManagerId.HasValue)
+                {
+                    <span>Please select a manager and click "Load Requests"</span>
+                }
+                else
+                {
+                    <span>No requests found for the selected manager</span>
+
+                }
+            </MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudTable Items="@_allRequests" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="3">
+            <HeaderContent>
+                <MudTh>Request ID</MudTh>
+                <MudTh>User</MudTh>
+                <MudTh>Department</MudTh>
+                <MudTh>Dates</MudTh>
+                <MudTh>Duration</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd DataLabel="Request ID">@context.Id</MudTd>
+                <MudTd DataLabel="User">@context.UserId</MudTd>
+                <MudTd DataLabel="Department">@context.DepartmentId</MudTd>
+                <MudTd DataLabel="Dates">
+                    @context.StartDate.ToString("MMM dd") - @context.EndDate.ToString("MMM dd, yyyy")
+                </MudTd>
+                <MudTd DataLabel="Duration">@context.TotalBusinessDays Days</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Color="@GetStatusColor(context.Status)" Size="Size.Small">
+                        @context.Status.ToString()
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+                        <MudMenuItem Icon="@Icons.Material.Filled.Visibility">View</MudMenuItem>
+                        @if (context.Status == RequestStatus.Pending)
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.Check" IconColor="Color.Success">Approve</MudMenuItem>
+                            <MudMenuItem Icon="@Icons.Material.Filled.Close" IconColor="Color.Error">Reject</MudMenuItem>
+                        }
+                    </MudMenu>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudContainer>
+
+
+@code {
+
+    private List<UserDto>? _managers;
+    private int? _selectedManagerId;
+    List<Request>? _allRequests;
+    List<Request>? _filteredRequests;
+    private bool _isLoading = false;
+
+    // Statiscs counters
+    private int _pendingCount = 0;
+    private int _approvedCount = 0;
+    private int _rejectedCount = 0;
+    private int _totalCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadManagersAsync();
+    }
+
+    private async Task LoadManagersAsync()
+    {
+        try
+        {
+            _managers = await ExternalDataCache.GetManagersAsync();
+
+            if (_managers.Count == 0)
+            {
+                Snackbar.Add("No managers found in the system", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Failed to load managers. Please refresh the page.", Severity.Error);
+            _managers = new List<UserDto>();
+        }
+    }
+
+    private async Task LoadPendingRequests()
+    {
+        if (!_selectedManagerId.HasValue)
+        {
+            Snackbar.Add("Please select a manager first", Severity.Warning);
+            return;
+        }
+
+        _isLoading = true;
+
+        try
+        {
+            var result = await Mediator.Send(new GetPendingRequestsQuery(_selectedManagerId.Value));
+
+            // Handle ErrorOr result
+            result.Match(
+            requests =>
+            {
+                // Success case: store the requests
+                _allRequests = requests;
+                _filteredRequests = requests;
+
+                // Update statistics
+                UpdateStatistics();
+                // Show success message
+                Snackbar.Add($"Loaded {requests.Count} requests successfully");
+
+                return requests;
+            },
+            errors =>
+            {
+                // Error case: show error messages
+                var errorMessage = string.Join(", ", errors.Select(e => e.Description));
+                Snackbar.Add($"Failed to load requests: {errorMessage}", Severity.Error);
+
+                _allRequests = new List<Request>();
+                _filteredRequests = new List<Request>();
+
+                return new List<Request>();
+            }
+            );
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("An unexpected error occurred. Please try again");
+
+            _allRequests = new List<Request>();
+            _filteredRequests = new List<Request>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Updates the statistics cards based on loaded requests
+    /// </summary>
+    private void UpdateStatistics()
+    {
+        if (_allRequests == null)
+        {
+            _pendingCount = 0;
+            _approvedCount = 0;
+            _rejectedCount = 0;
+            _totalCount = 0;
+            return;
+        }
+
+        _pendingCount = _allRequests.Count(r => r.Status == RequestStatus.Pending);
+        _approvedCount = _allRequests.Count(r => r.Status == RequestStatus.Approved);
+        _rejectedCount = _allRequests.Count(r => r.Status == RequestStatus.Rejected);
+        _totalCount = _allRequests.Count;
+    }
+
+    // ============================================
+    // EVENT HANDLERS
+    // ============================================
+
+
+    // ============================================
+    // HELPER METHODS
+    // ============================================
+
+    /// <summary>
+    /// Returns the appropriate color for each request status
+    /// Used in the status chip
+    /// </summary>
+    private Color GetStatusColor(RequestStatus status)
+    {
+        return status switch
+        {
+            RequestStatus.Approved => Color.Success,
+            RequestStatus.Rejected => Color.Error,
+            RequestStatus.Pending => Color.Warning,
+            RequestStatus.Draft => Color.Default,
+            _ => Color.Info
+        };
+    }
+}
+

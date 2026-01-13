@@ -7,5 +7,7 @@ namespace MAG.TOF.Application.Interfaces
         Task<List<DepartmentDto>> GetCachedDepartmentsAsync();
         Task<List<GradeDto>> GetCachedGradesAsync();
         Task<List<UserDto>> GetCachedUsersAsync();
+
+        Task<List<UserDto>> GetManagersAsync();
     }
 }

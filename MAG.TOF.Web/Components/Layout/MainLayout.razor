@@ -16,15 +16,13 @@
                Variant="@DrawerVariant.Persistent"
                ClipMode="DrawerClipMode.Always">
         
-        <!-- Drawer Header with Logo and Title -->
-        <MudDrawerHeader>
+        <!-- Drawer Header with Logo and Title (Compact padding) -->
+        <MudDrawerHeader Class="py-2">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                 <MudIcon Icon="@Icons.Material.Filled.Bolt" Color="Color.Primary" Size="Size.Large" />
                 <MudText Typo="Typo.h6">MAG.TOF HR</MudText>
             </MudStack>
         </MudDrawerHeader>
-        
-        <MudDivider />
         
         <!-- Navigation Menu Component - Pass callback to open right drawer -->
         <NavMenu OnNewRequestClick="@OpenRequestDrawer" />
@@ -51,7 +49,7 @@
     <!-- Main Content Area - Where pages are rendered -->
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-            @Body  <!-- Pages render here (Home, CreateRequest, etc.) -->
+            @Body  <!-- Pages render here (Home, etc.) -->
         </MudContainer>
     </MudMainContent>
 
@@ -71,8 +69,6 @@
                           Color="Color.Default" 
                           OnClick="@CloseRequestDrawer" />
         </MudDrawerHeader>
-        
-        <MudDivider />
         
         <!-- Form Content - Automatically scrollable if content overflows -->
         <MudDrawerContainer>
