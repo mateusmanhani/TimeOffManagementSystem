@@ -1,0 +1,41 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  GITHUB_USERNAME: mateusmanhani
+
+steps:
+- checkout: self
+  persistCredentials: true
+  fetchDepth: 0   # full history prevents missing-object/index-pack errors [web:88]
+
+- bash: |
+    set -euo pipefail
+    echo "Remotes:"; git remote -v
+    echo "Ref: $(git rev-parse --abbrev-ref HEAD) SHA: $(git rev-parse --short HEAD)"
+
+    # Configure identity (optional but nice for audit)
+    git config user.email "${USER_EMAIL}"
+    git config user.name "${GITHUB_USERNAME}"
+
+    # Ensure 'github' remote points to your repo
+    git remote remove github 2>/dev/null || true
+    git remote add github "https://${GITHUB_USERNAME}:${GITHUB_PAT}@github.com/mateusmanhani/TimeOffManagementSystem.git"
+
+    # Fetch for visibility and safe leasing
+    git fetch github +refs/heads/*:refs/remotes/github/* || true
+
+    # Overwrite only the main branch on GitHub with the current commit
+    git push --force-with-lease github HEAD:refs/heads/main
+
+    # Diagnostics
+    echo "Remote heads after push:"
+    git ls-remote --heads github
+  displayName: 'Push only main to GitHub (force overwrite)'
+  env:
+    GITHUB_USERNAME: $(GITHUB_USERNAME)
+    GITHUB_PAT: $(githubPat)   # secret variable defined in pipeline UI
+    USER_EMAIL: $(userEmail)
