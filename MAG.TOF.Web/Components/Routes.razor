@@ -1,11 +1,38 @@
 ﻿@using MAG.TOF.Web.Components.Account.Shared
+
+@* 
+    Router component: Handles all page routing and navigation
+    - AppAssembly: Scans this assembly for pages with routing directives
+    - NotFoundPage: Component to show for 404 errors
+*@
 <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
+        @* 
+            AuthorizeRouteView: Handles authorization for routes
+            - Shows different content based on user's authentication state
+            - Applies MainLayout to all pages by default
+        *@
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+            <Authorizing>
+                @* Shown while checking authentication status *@
+                <p>Determining session state, please wait...</p>
+            </Authorizing>
             <NotAuthorized>
+                @* User is not logged in - redirect to login *@
                 <RedirectToLogin />
             </NotAuthorized>
         </AuthorizeRouteView>
+        
+        @* Focuses on h1 element when navigating between pages (accessibility) *@
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>
+
+@code {
+    /// <summary>
+    /// Cascading parameter to access HTTP context
+    /// Useful for server-side operations that need request information
+    /// </summary>
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+}

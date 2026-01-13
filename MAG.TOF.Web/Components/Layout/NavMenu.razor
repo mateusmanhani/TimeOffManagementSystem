@@ -1,131 +1,127 @@
-﻿@implements IDisposable
-
+﻿@using MudBlazor
+@implements IDisposable
 @inject NavigationManager NavigationManager
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <div class="brand-container">
-            <span class="brand-icon">⚡</span>
-            <span class="brand-text">MAG.TOF HR</span>
-        </div>
-    </div>
-</div>
+<!-- MudBlazor Navigation Menu Component -->
+<MudNavMenu>
+    
+    <!-- Primary Action Button: Create New Request -->
+    <!-- When clicked, invokes the callback passed from MainLayout -->
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               FullWidth="true"
+               Class="mb-4 mx-2"
+               OnClick="@HandleNewRequestClick">
+        New Request
+    </MudButton>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+    <!-- Navigation Links -->
+    
+    <!-- Dashboard - Home page -->
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
+        Dashboard
+    </MudNavLink>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <div class="new-request-container" onclick="event.stopPropagation()">
-        @* <button class="btn-new-request">
-            <span class="plus-icon">+</span> New Request
-        </button> *@
-        <a href="/requests/create" class="btn-new-request">
-            <span class="plus-icon">+</span> New Request
-        </a>
-    </div>
+    <!-- Requests Section - Expandable group with sub-items -->
+    <MudNavGroup Title="Requests" Icon="@Icons.Material.Filled.Description" Expanded="true">
+        <MudNavLink Href="requests/my" Icon="@Icons.Material.Filled.Person">
+            My Requests
+        </MudNavLink>
+        <MudNavLink Href="requests/team" Icon="@Icons.Material.Filled.Group">
+            Team Requests
+        </MudNavLink>
+    </MudNavGroup>
 
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Dashboard
-            </NavLink>
-        </div>
+    <!-- Other Navigation Items -->
+    <MudNavLink Href="calendar" Icon="@Icons.Material.Filled.CalendarToday">
+        Calendar
+    </MudNavLink>
 
-        <div class="nav-item px-3 nav-item-collapsible">
-            <button class="nav-link nav-link-expandable" @onclick="ToggleRequestsMenu">
-                <span class="bi bi-file-text-nav-menu" aria-hidden="true"></span> 
-                <span>Requests</span>
-                <span class="expand-icon @(requestsExpanded ? "expanded" : "")">›</span>
-            </button>
-            @if (requestsExpanded)
-            {
-                <div class="sub-menu">
-                    <NavLink class="nav-link sub-link" href="requests/my">
-                        My Requests
-                    </NavLink>
-                    <NavLink class="nav-link sub-link" href="requests/team">
-                        Team Requests
-                    </NavLink>
-                </div>
-            }
-        </div>
+    <MudNavLink Href="reports" Icon="@Icons.Material.Filled.Assessment">
+        Reports
+    </MudNavLink>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="calendar">
-                <span class="bi bi-calendar-nav-menu" aria-hidden="true"></span> Calendar
-            </NavLink>
-        </div>
+    <MudNavLink Href="settings" Icon="@Icons.Material.Filled.Settings">
+        Settings
+    </MudNavLink>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="reports">
-                <span class="bi bi-graph-nav-menu" aria-hidden="true"></span> Reports
-            </NavLink>
-        </div>
+    <!-- Divider separates main navigation from auth section -->
+    <MudDivider Class="my-4" />
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="settings">
-                <span class="bi bi-gear-nav-menu" aria-hidden="true"></span> Settings
-            </NavLink>
-        </div>
-
-        <AuthorizeView>
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Manage">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <form action="Account/Logout" method="post">
-                        <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
-                        </button>
-                    </form>
-                </div>
-            </Authorized>
-            <NotAuthorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Register">
-                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Login">
-                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
-                    </NavLink>
-                </div>
-            </NotAuthorized>
-        </AuthorizeView>
-    </nav>
-</div>
+    <!-- Authentication Section - Shows different options based on login state -->
+    <AuthorizeView>
+        <Authorized>
+            <!-- User is logged in -->
+            <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.AccountCircle">
+                @context.User.Identity?.Name
+            </MudNavLink>
+            <MudNavLink OnClick="@Logout" Icon="@Icons.Material.Filled.Logout">
+                Logout
+            </MudNavLink>
+        </Authorized>
+        <NotAuthorized>
+            <!-- User is not logged in -->
+            <MudNavLink Href="Account/Register" Icon="@Icons.Material.Filled.PersonAdd">
+                Register
+            </MudNavLink>
+            <MudNavLink Href="Account/Login" Icon="@Icons.Material.Filled.Login">
+                Login
+            </MudNavLink>
+        </NotAuthorized>
+    </AuthorizeView>
+</MudNavMenu>
 
 @code {
+    /// <summary>
+    /// Event callback passed from MainLayout
+    /// Used to notify parent when "New Request" button is clicked
+    /// </summary>
+    [Parameter]
+    public EventCallback OnNewRequestClick { get; set; }
+
     private string? currentUrl;
-    private bool requestsExpanded = false;
 
     protected override void OnInitialized()
     {
+        // Track current URL for navigation highlighting
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        
+        // Subscribe to navigation changes to update active link styling
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 
+    /// <summary>
+    /// Updates current URL when user navigates to a different page
+    /// Triggers re-render to highlight active navigation link
+    /// </summary>
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
         StateHasChanged();
     }
 
-    private void ToggleRequestsMenu()
+    /// <summary>
+    /// Handles "New Request" button click
+    /// Invokes the callback to open the right drawer in MainLayout
+    /// </summary>
+    private async Task HandleNewRequestClick()
     {
-        requestsExpanded = !requestsExpanded;
+        await OnNewRequestClick.InvokeAsync();
     }
 
-    // private void NavigateToCreateRequest()
-    // {
-    //     NavigationManager.NavigateTo("requests/create");
-    // }
+    /// <summary>
+    /// Logs out the current user
+    /// Navigates to logout endpoint with full page reload
+    /// </summary>
+    private void Logout()
+    {
+        NavigationManager.NavigateTo("/Account/Logout", forceLoad: true);
+    }
 
+    /// <summary>
+    /// Cleanup: Unsubscribe from navigation events when component is disposed
+    /// </summary>
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;

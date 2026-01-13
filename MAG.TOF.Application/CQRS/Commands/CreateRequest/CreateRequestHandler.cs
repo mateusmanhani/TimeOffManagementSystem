@@ -72,7 +72,7 @@ namespace MAG.TOF.Application.CQRS.Commands.CreateRequest
             {
                 _logger.LogError(ex, "Error occurred while creating request for UserId: {UserId}",
                     command.UserId);
-                return Error.Failure("Request.CreateFailed", "An Error occurred while creating request");
+                return Error.Failure("Request.CreateFailed", "Error occurred while creating request for UserId: {UserId}");
             }
         }
 
@@ -87,19 +87,21 @@ namespace MAG.TOF.Application.CQRS.Commands.CreateRequest
             var departmentResult = await _externalDataValidator.ValidateDepartmentExistsAsync(command.DepartmentId);
             if (departmentResult.IsError) return departmentResult.Errors;
 
-            // Validate manager exists (if provided)
-            if (command.ManagerId.HasValue)
+            if(command.Status != Domain.Enums.RequestStatus.Draft)
             {
-                var managerResult = await _externalDataValidator.ValidateManagerExistsAndHasCorrectGradeAsync(command.ManagerId.Value);
-                if (managerResult.IsError) return managerResult.Errors;
-            }
+                // Validate manager exists (if provided)
+                if (command.ManagerId.HasValue)
+                {
+                    var managerResult = await _externalDataValidator.ValidateManagerExistsAndHasCorrectGradeAsync(command.ManagerId.Value);
+                    if (managerResult.IsError) return managerResult.Errors;
+                }
 
-
-            // Ensure user cannot set himself as approving manager
-            if (command.UserId == command.ManagerId)
-            {
-                _logger.LogWarning("You cannot set yourself as approving manager on a request.");
-                return Error.Conflict("Request.Conflict", "You cannot set yourself as approving manager on a request.");
+                // Ensure user cannot set himself as approving manager
+                if (command.UserId == command.ManagerId)
+                {
+                    _logger.LogWarning("You cannot set yourself as approving manager on a request.");
+                    return Error.Conflict("Request.Conflict", "You cannot set yourself as approving manager on a request.");
+                }
             }
 
             // validate request
@@ -113,25 +115,28 @@ namespace MAG.TOF.Application.CQRS.Commands.CreateRequest
                     "Start date must be today or in the future, and end date must be after start date");
             }
 
-            //  check for overlapping requests
-            var overLappingRequest = await _repository.HasOverlappingRequestsAsync(
+            //  check for overlapping requests if not draft
+            if (command.Status != Domain.Enums.RequestStatus.Draft)
+            {
+                var overLappingRequest = await _repository.HasOverlappingRequestsAsync(
                 command.UserId,
                 command.StartDate,
                 command.EndDate);
 
-            if (overLappingRequest != null)
-            {
-                var overlapMessage = _requestValidationService.FormatOverlapMessage(
-                    overLappingRequest.Id,
-                    overLappingRequest.StartDate,
-                    overLappingRequest.EndDate);
+                if (overLappingRequest != null)
+                {
+                    var overlapMessage = _requestValidationService.FormatOverlapMessage(
+                        overLappingRequest.Id,
+                        overLappingRequest.StartDate,
+                        overLappingRequest.EndDate);
 
-                _logger.LogWarning("Date overlap detected for UserId: {UserId}. {Message}",
-                    command.UserId, overlapMessage);
+                    _logger.LogWarning("Date overlap detected for UserId: {UserId}. {Message}",
+                        command.UserId, overlapMessage);
 
-                return Error.Conflict("Request.DateOverlap", overlapMessage);
+                    return Error.Conflict("Request.DateOverlap", overlapMessage);
+                }
             }
-
+            
             // Calculate business days
             int actualBusinessDays = _requestValidationService.CalculateBusinessDays(
                 command.StartDate,

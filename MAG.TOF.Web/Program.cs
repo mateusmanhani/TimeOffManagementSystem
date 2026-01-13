@@ -12,6 +12,7 @@ using MAG.TOF.Web.Endpoints;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using MudBlazor.Services;
 using NLog;
 using NLog.Web;
 
@@ -63,6 +64,9 @@ try
 
     builder.Services.AddScoped<RequestValidationService>();
 
+    // Register MudBlazor Services
+    builder.Services.AddMudServices();
+
     // Register HttpClient for CORE API
     builder.Services.AddHttpClient<ICoreApiService, CoreApiService>(client =>
     {
@@ -76,7 +80,7 @@ try
 
     //  Register In-Memory Cache
     builder.Services.AddMemoryCache();
-    builder.Services.AddScoped<ICacheService, InMemoryCacheService>();
+    builder.Services.AddSingleton<ICacheService, InMemoryCacheService>();
 
     // Register External Data Cache
     builder.Services.AddScoped<IExternalDataCache, ExternalDataCache>(); // Cannot be Singleton unless ICoreApiService and ICacheService are singleton as well

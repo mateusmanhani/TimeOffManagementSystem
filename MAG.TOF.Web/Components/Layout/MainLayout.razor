@@ -1,23 +1,126 @@
-﻿@inherits LayoutComponentBase
+﻿@using MudBlazor
+@using MAG.TOF.Web.Components.Forms
+@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<!-- MudBlazor Providers: Required for MudBlazor components to work -->
+<MudThemeProvider />        <!-- Provides theme/styling configuration -->
+<MudPopoverProvider />      <!-- Enables popovers and tooltips -->
+<MudDialogProvider />       <!-- Enables modal dialogs -->
+<MudSnackbarProvider />     <!-- Enables toast notifications -->
 
-    <main>
-        <div class="top-row px-4">
-            <div class="top-row-title">Holiday Request System</div>
-        </div>
+<!-- Main Layout Structure -->
+<MudLayout>
+    <!-- Left Sidebar Navigation Drawer (Always visible) -->
+    <MudDrawer @bind-Open="@_drawerOpen" 
+               Elevation="2" 
+               Variant="@DrawerVariant.Persistent"
+               ClipMode="DrawerClipMode.Always">
+        
+        <!-- Drawer Header with Logo and Title -->
+        <MudDrawerHeader>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.Bolt" Color="Color.Primary" Size="Size.Large" />
+                <MudText Typo="Typo.h6">MAG.TOF HR</MudText>
+            </MudStack>
+        </MudDrawerHeader>
+        
+        <MudDivider />
+        
+        <!-- Navigation Menu Component - Pass callback to open right drawer -->
+        <NavMenu OnNewRequestClick="@OpenRequestDrawer" />
+    </MudDrawer>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+    <!-- Top Application Bar -->
+    <MudAppBar Elevation="1">
+        <!-- Menu button to toggle left sidebar -->
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" 
+                       Color="Color.Inherit" 
+                       Edge="Edge.Start" 
+                       OnClick="@ToggleDrawer" />
+        
+        <MudText Typo="Typo.h6">Holiday Request System</MudText>
+        
+        <!-- Spacer pushes remaining items to the right -->
+        <MudSpacer />
+        
+        <!-- Action icons in top bar -->
+        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
+        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
+    </MudAppBar>
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+    <!-- Main Content Area - Where pages are rendered -->
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+            @Body  <!-- Pages render here (Home, CreateRequest, etc.) -->
+        </MudContainer>
+    </MudMainContent>
+
+    <!-- Right Drawer for New Request Form (Slides in from right when opened) -->
+    <MudDrawer Open="@_requestDrawerOpen" 
+               OpenChanged="@OnRightDrawerOpenChanged"
+               Anchor="Anchor.End" 
+               Elevation="2"
+               Width="450px"
+               Variant="@DrawerVariant.Temporary">
+        
+        <!-- Drawer Header with Title and Close Button -->
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">New Request Entry</MudText>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                          Color="Color.Default" 
+                          OnClick="@CloseRequestDrawer" />
+        </MudDrawerHeader>
+        
+        <MudDivider />
+        
+        <!-- Form Content - Automatically scrollable if content overflows -->
+        <MudDrawerContainer>
+            <!-- CreateRequestForm component - Pass callback to close drawer on success -->
+            <CreateRequestForm OnSuccess="@CloseRequestDrawer" />
+        </MudDrawerContainer>
+    </MudDrawer>
+</MudLayout>
+
+@code {
+    // State variables to control drawer visibility
+    private bool _drawerOpen = true;           // Left sidebar drawer (navigation)
+    private bool _requestDrawerOpen = false;   // Right drawer (form)
+
+    /// <summary>
+    /// Toggles the left navigation drawer open/closed
+    /// Called by menu button in top app bar
+    /// </summary>
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    /// <summary>
+    /// Opens the right drawer to show the create request form
+    /// Called by "New Request" button in NavMenu
+    /// </summary>
+    private void OpenRequestDrawer()
+    {
+        _requestDrawerOpen = true;
+    }
+
+    /// <summary>
+    /// Event handler for when right drawer open state changes
+    /// Updates local state to match drawer state
+    /// </summary>
+    private void OnRightDrawerOpenChanged(bool isOpen)
+    {
+        _requestDrawerOpen = isOpen;
+    }
+
+    /// <summary>
+    /// Closes the right drawer
+    /// Called when form is successfully submitted or close button is clicked
+    /// </summary>
+    private void CloseRequestDrawer()
+    {
+        _requestDrawerOpen = false;
+    }
+}
+

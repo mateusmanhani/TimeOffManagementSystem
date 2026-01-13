@@ -1,40 +1,62 @@
-﻿@using Microsoft.AspNetCore.Identity
-@using MAG.TOF.Web.Data
+﻿@using MudBlazor
+@* @using Microsoft.AspNetCore.Identity
+@using MAG.TOF.Web.Data *@
 
-@inject SignInManager<ApplicationUser> SignInManager
+@implements IDisposable
+@inject NavigationManager NavigationManager
 
-<ul class="nav nav-pills flex-column">
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">Profile</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Email">Email</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/ChangePassword">Password</NavLink>
-    </li>
-    @if (hasExternalLogins)
-    {
-        <li class="nav-item">
-            <NavLink class="nav-link" href="Account/Manage/ExternalLogins">External logins</NavLink>
-        </li>
-    }
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/TwoFactorAuthentication">Two-factor authentication</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Passkeys">Passkeys</NavLink>
-    </li>
-    <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/PersonalData">Personal data</NavLink>
-    </li>
-</ul>
+<div class="nav-scrollable">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">
+                <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> Profile
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Account/Manage/Email">
+                <span class="bi bi-envelope-fill-nav-menu" aria-hidden="true"></span> Email
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Account/Manage/ChangePassword">
+                <span class="bi bi-lock-fill-nav-menu" aria-hidden="true"></span> Password
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Account/Manage/TwoFactorAuthentication">
+                <span class="bi bi-shield-fill-nav-menu" aria-hidden="true"></span> Two-factor authentication
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Account/Manage/PersonalData">
+                <span class="bi bi-download-nav-menu" aria-hidden="true"></span> Personal data
+            </NavLink>
+        </div>
+    </nav>
+</div>
 
 @code {
-    private bool hasExternalLogins;
+    private string? currentUrl;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    private void Logout()
+    {
+        // Logout logic here
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
