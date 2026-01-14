@@ -26,18 +26,21 @@ namespace MAG.TOF.Infrastructure.Services
 
         public async Task<List<UserDto>> GetCachedUsersAsync()
         {
-            return await _cacheService.GetOrCreateAsync(
+            var users =  await _cacheService.GetOrCreateAsync(
                 key: UsersCacheKey,
                 factory: async () => await _coreApiClient.GetUsersAsync(),
                 expiration: TimeSpan.FromMinutes(30));
+
+            return users.OrderBy(u => u.FullName).ToList();
         }
 
         public async Task<List<DepartmentDto>> GetCachedDepartmentsAsync()
         {
-            return await _cacheService.GetOrCreateAsync(
+            var departments = await _cacheService.GetOrCreateAsync(
                 key: DepartmentsCacheKey,
                 factory: async () => await _coreApiClient.GetDepartmentsAsync(),
                 expiration: TimeSpan.FromMinutes(30));
+            return departments.OrderBy(d => d.Name).ToList();
         }
 
         public async Task<List<GradeDto>> GetCachedGradesAsync()
@@ -68,7 +71,6 @@ namespace MAG.TOF.Infrastructure.Services
                 // filter users by manager grade
                 var managers = users
                     .Where(u => u.GradeId == managerGrade.Id)
-                    .OrderBy(u => u.LastName)
                     .ToList();
 
                 if (managers.Count == 0)

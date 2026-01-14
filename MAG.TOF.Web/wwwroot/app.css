@@ -58,3 +58,61 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* ============================================
+   Manager Dashboard - Statistics Cards Hover Effects
+   ============================================ */
+.stat-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: white;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Info - Blue */
+.stat-card-info:hover {
+    background: var(--mud-palette-info);
+    color: white;
+}
+
+.stat-card-info:hover .mud-icon-root,
+.stat-card-info:hover .mud-typography {
+    color: white !important;
+}
+
+/* Success - Green */
+.stat-card-success:hover {
+    background: var(--mud-palette-success);
+    color: white;
+}
+
+.stat-card-success:hover .mud-icon-root,
+.stat-card-success:hover .mud-typography {
+    color: white !important;
+}
+
+/* Error - Red */
+.stat-card-error:hover {
+    background: var(--mud-palette-error);
+    color: white;
+}
+
+.stat-card-error:hover .mud-icon-root,
+.stat-card-error:hover .mud-typography {
+    color: white !important;
+}
+
+/* Primary - Purple/Blue */
+.stat-card-primary:hover {
+    background: var(--mud-palette-primary);
+    color: white;
+}
+
+.stat-card-primary:hover .mud-icon-root,
+.stat-card-primary:hover .mud-typography {
+    color: white !important;
+}
