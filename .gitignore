@@ -15,4 +15,4 @@
 /MAG.TOF.Application/bin/Debug/net8.0
 /MAG.TOF.Domain/bin/Debug/net8.0
 /MAG.TOF.Infrastructure/bin/Debug/net8.0
-*.md
+/MudBlazor-Architecture-Guide.md
