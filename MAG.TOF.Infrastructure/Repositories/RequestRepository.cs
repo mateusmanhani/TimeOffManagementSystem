@@ -16,7 +16,7 @@ namespace MAG.TOF.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task AddRequestAsync(Request request)
+        public async Task AddRequestAsync(Request request, CancellationToken cancellationToken)
         {
             //  Add entity to the context
             await _context.Requests.AddAsync(request);
@@ -25,7 +25,7 @@ namespace MAG.TOF.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteRequestAsync(int id)
+        public async Task DeleteRequestAsync(int id, CancellationToken cancellationToken)
         {
             //  Find the entity by id
             var request = await _context.Requests.FindAsync(id);
@@ -37,29 +37,19 @@ namespace MAG.TOF.Infrastructure.Repositories
                 await _context.SaveChangesAsync();
             }
         }
-
-        public async Task<List<Request>> GetAllRequestsAsync()
-        {
-            return await _context.Requests
-                .OrderByDescending(r => r.StartDate) // Most recent first
-                .ToListAsync();
-        }
-
-        public async Task<Request?> GetRequestByIdAsync(int id)
+        public async Task<Request?> GetRequestByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await _context.Requests
                 .FirstOrDefaultAsync(r => r.Id == id);
         }
 
-        public async Task UpdateRequestAsync(Request request)
+        public async Task UpdateRequestAsync(Request request, CancellationToken cancellationToken)
         {
             _context.Requests.Update(request);
             await _context.SaveChangesAsync();
         }
 
-        // todo review repository architecture 1 per table or what?
-        // Rename repository to RequestRepository?
-        public async Task<Request?> HasOverlappingRequestsAsync(int usrId, DateTime startDate, DateTime endDate)
+        public async Task<Request?> HasOverlappingRequestsAsync(int usrId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
         {
             // Find the first overlapping request for this user
             return await _context.Requests
@@ -70,23 +60,37 @@ namespace MAG.TOF.Infrastructure.Repositories
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<List<Request>> GetRequestsByUserIdAsync(int userId)
+        public async Task<List<Request>> GetRequestsAsync(
+            int? managerId = null,
+            RequestStatus? status = null,
+            int? userId = null,
+            DateTime? from = null,
+            DateTime? to = null,
+            int? page = null, int?
+            pageSize = null,
+            CancellationToken cancellationToken = default)
         {
-            return await _context.Requests
-                .Where( r => r.UserId == userId)
-                .OrderByDescending(r => r.StartDate) // Most recent first
-                .ToListAsync();
-        }
+            IQueryable<Request> q = _context.Requests.AsQueryable();
 
-        // todo - implement pagination | Manual or PaginatedResult class?
-        public async Task<List<Request>> GetPendingRequestsByManagerId(int loggedUserId)
-        {
-            return await _context.Requests
-                .Where(r => r.ManagerId == loggedUserId 
-                && r.Status == RequestStatus.Pending)
-                .OrderByDescending(r => r.StartDate)
-                .ToListAsync();
-           
+            if (managerId.HasValue) q = q.Where(r => r.ManagerId == managerId.Value);
+            if (status.HasValue) q = q.Where(r => r.Status == status.Value);
+            if (userId.HasValue) q = q.Where(r => r.UserId == userId.Value);
+            if (from.HasValue) q = q.Where(r => r.StartDate >= from.Value);
+            if (to.HasValue) q = q.Where(r => r.EndDate <= to.Value);
+
+            // optional paging
+            if (page.HasValue && pageSize.HasValue)
+            {
+                q = q.OrderByDescending(r => r.StartDate)
+                     .Skip((page.Value - 1) * pageSize.Value)
+                     .Take(pageSize.Value);
+            }
+            else
+            {
+                q = q.OrderByDescending(r => r.StartDate).AsNoTracking();
+            }
+
+            return await q.ToListAsync(cancellationToken);
         }
     }
 }

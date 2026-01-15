@@ -38,7 +38,7 @@ namespace MAG.TOF.Application.CQRS.Commands.UpdateRequest
                     return validationError.Value;
 
                 // Fetch existing request
-                var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId);
+                var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId, cancellationToken);
                 if (existingRequest == null)
                 {
                     _logger.LogWarning("Request with ID {RequestId} not found", command.RequestId);
@@ -103,7 +103,7 @@ namespace MAG.TOF.Application.CQRS.Commands.UpdateRequest
                     existingRequest.ManagerId = command.ManagerId.Value;
                 }
 
-                await _repository.UpdateRequestAsync(existingRequest);
+                await _repository.UpdateRequestAsync(existingRequest, cancellationToken);
                 _logger.LogInformation("Request with ID {RequestId} updated successfully", command.RequestId);
                 return Result.Success;
             }

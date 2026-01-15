@@ -1,6 +1,7 @@
 ﻿using ErrorOr;
 using MAG.TOF.Application.CQRS.Commands.ApproveRequest;
 using MAG.TOF.Application.Interfaces;
+using MAG.TOF.Application.Messaging;
 using MAG.TOF.Application.Validation;
 using MAG.TOF.Domain.Enums;
 using MediatR;
@@ -13,15 +14,21 @@ namespace MAG.TOF.Application.CQRS.Commands.RejectRequest
 
         private readonly ExternalDataValidator _externalDataValidator;
         private readonly IRequestRepository _repository;
+        private readonly IExternalDataCache _externalDataCache;
+        private readonly IEmailQueueService _emailQueueService;
         private readonly ILogger<ApproveRequestHandler> _logger;
 
         public RejectRequestHandler(
             ExternalDataValidator externalDataValidator,
             IRequestRepository repository,
+            IExternalDataCache externalDataCache,
+            IEmailQueueService emailQueueService,
             ILogger<ApproveRequestHandler> logger)
         {
             _externalDataValidator = externalDataValidator;
             _repository = repository;
+            _externalDataCache = externalDataCache;
+            _emailQueueService = emailQueueService;
             _logger = logger;
         }
         public async Task<ErrorOr<Success>> Handle(RejectRequestCommand command, CancellationToken cancellationToken)
@@ -42,7 +49,7 @@ namespace MAG.TOF.Application.CQRS.Commands.RejectRequest
                 }
 
                 // Validate request exists
-                var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId);
+                var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId, cancellationToken);
                 if (existingRequest is null)
                 {
                     _logger.LogError("Request not found: {RequestId}", command.RequestId);
@@ -75,8 +82,33 @@ namespace MAG.TOF.Application.CQRS.Commands.RejectRequest
                 existingRequest.ManagerId = command.LoggedUserId;
                 existingRequest.ManagerComment = command.RejectionReason;
 
-                await _repository.UpdateRequestAsync(existingRequest);
+                await _repository.UpdateRequestAsync(existingRequest, cancellationToken);
                 _logger.LogInformation("Request {RequestId} rejected by Manager {ManagerId}", command.RequestId, command.LoggedUserId);
+
+                // Try to enqueue email notification (not blocking)
+                try
+                {
+                    var users = await _externalDataCache.GetCachedUsersAsync();
+                    var requestor = users.FirstOrDefault(u => u.Id == existingRequest.UserId);
+                    var requestorEmail = requestor?.Email;
+
+                    if (!string.IsNullOrEmpty(requestorEmail))
+                    {
+                        var emailMsg = new EmailQueueMessage(
+                            RequestorEmail: requestorEmail,
+                            Subject: $"Your request #{existingRequest.Id} was rejected",
+                            BodyHtml: $"<p>Hi {requestor?.FullName ?? "user"},</p><p>Your request #{existingRequest.Id} has been <strong>rejected</strong>.</p>"
+                        );
+
+                        await _emailQueueService.EnqueueEmailAsync(emailMsg, cancellationToken);
+                        _logger.LogInformation("Enqueued rejection email for request {RequestId} to requestor {RequestorUserId}", existingRequest.Id, existingRequest.UserId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to enqueue rejection email for request {RequestId}", existingRequest.Id);
+                }
+
                 return Result.Success;
             }
             catch (Exception ex)

@@ -41,7 +41,7 @@ namespace MAG.TOF.Domain.Enums
         /// </summary>
         public static bool CanBeRecalled(this RequestStatus status)
         {
-            return status is RequestStatus.Pending or RequestStatus.Approved;
+            return status is RequestStatus.Pending;
         }
 
         /// <summary>

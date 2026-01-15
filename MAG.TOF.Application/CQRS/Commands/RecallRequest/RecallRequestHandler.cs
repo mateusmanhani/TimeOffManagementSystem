@@ -34,7 +34,7 @@ namespace MAG.TOF.Application.CQRS.Commands.RecallRequest
                 }
 
                 // Fetch existing request
-                var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId);
+                var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId, cancellationToken);
                 if (existingRequest is null)
                 {
                     _logger.LogWarning("RecallRequestHandler: Request with Id {RequestId} not found.", command.RequestId);
@@ -47,7 +47,7 @@ namespace MAG.TOF.Application.CQRS.Commands.RecallRequest
                     _logger.LogWarning("RecallRequestHandler: Request {RequestId} cannot be recalled. Current status: {Status}", 
                         command.RequestId, existingRequest.Status);
                     return Error.Validation("InvalidStatusForRecall", 
-                        $"Only pending or approved requests can be recalled. Current status: {existingRequest.Status}");
+                        $"Only pending requests can be recalled. Current status: {existingRequest.Status}");
                 }
 
                 // check if the logged user is the manager assigned to the request
@@ -59,7 +59,7 @@ namespace MAG.TOF.Application.CQRS.Commands.RecallRequest
 
                 // Update request status to 'Recalled'
                 existingRequest.Status = RequestStatus.Recalled;
-                await _repository.UpdateRequestAsync(existingRequest);
+                await _repository.UpdateRequestAsync(existingRequest, cancellationToken);
                 
                 _logger.LogInformation("RecallRequestHandler: Successfully recalled request with Id {RequestId}.", command.RequestId);
 

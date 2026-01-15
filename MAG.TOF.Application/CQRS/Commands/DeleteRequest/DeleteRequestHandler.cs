@@ -29,7 +29,7 @@ namespace MAG.TOF.Application.CQRS.Commands.DeleteRequest
                 }
 
                 // Check if request exists
-                var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId);
+                var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId, cancellationToken);
                 if (existingRequest == null)
                 {
                     _logger.LogWarning("Request with id: {RequestId} not found", command.RequestId);
@@ -53,7 +53,7 @@ namespace MAG.TOF.Application.CQRS.Commands.DeleteRequest
                 }
 
                 // Delete request
-                await _repository.DeleteRequestAsync(command.RequestId);
+                await _repository.DeleteRequestAsync(command.RequestId, cancellationToken);
 
                 _logger.LogInformation("Request with ID {RequestId} deleted successfully", command.RequestId);
                 return Result.Success;

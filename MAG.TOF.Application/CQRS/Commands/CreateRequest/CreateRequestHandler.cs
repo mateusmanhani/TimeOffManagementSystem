@@ -5,6 +5,7 @@ using MAG.TOF.Domain.Entities;
 using MAG.TOF.Domain.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace MAG.TOF.Application.CQRS.Commands.CreateRequest
 {
@@ -37,7 +38,7 @@ namespace MAG.TOF.Application.CQRS.Commands.CreateRequest
                 _logger.LogDebug("Creating request for UserId: {UserId}", command.UserId);
 
                 // Validate request and calculate business days
-                var validationResult = await ValidateRequestAsync(command);
+                var validationResult = await ValidateRequestAsync(command, cancellationToken);
                 if (validationResult.IsError)
                 {
                     return validationResult.Errors;
@@ -62,7 +63,7 @@ namespace MAG.TOF.Application.CQRS.Commands.CreateRequest
                 };
 
                 // Save to database
-                await _repository.AddRequestAsync(request);
+                await _repository.AddRequestAsync(request, cancellationToken);
 
                 _logger.LogInformation("Successfully created request with Id: {RequestId} for UserId: {UserId}",
                     request.Id, request.UserId);
@@ -77,7 +78,7 @@ namespace MAG.TOF.Application.CQRS.Commands.CreateRequest
         }
 
         // Validate request, calculate/ validate business days and return business days or Errors
-        private async Task<ErrorOr<Success>> ValidateRequestAsync(CreateRequestCommand command)
+        private async Task<ErrorOr<Success>> ValidateRequestAsync(CreateRequestCommand command, CancellationToken cancellationToken)
         {
             // validate user exists (using cached data)
             var userResult = await _externalDataValidator.ValidateUserExistsAsync(command.UserId);
@@ -121,7 +122,8 @@ namespace MAG.TOF.Application.CQRS.Commands.CreateRequest
                 var overLappingRequest = await _repository.HasOverlappingRequestsAsync(
                 command.UserId,
                 command.StartDate,
-                command.EndDate);
+                command.EndDate,
+                cancellationToken);
 
                 if (overLappingRequest != null)
                 {

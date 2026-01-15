@@ -3,7 +3,7 @@
 @inject NavigationManager NavigationManager
 
 <!-- MudBlazor Navigation Menu Component -->
-<MudNavMenu>
+<MudNavMenu Class="pt-0 mt-0">
     
     <!-- Primary Action Button: Create New Request -->
     <!-- When clicked, invokes the callback passed from MainLayout -->
@@ -20,22 +20,12 @@
     
     <!-- Dashboard - Home page -->
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
-        Dashboard
+        My Requets
     </MudNavLink>
 
-    <!-- Requests Section - Expandable group with sub-items -->
-    <MudNavGroup Title="Requests" Icon="@Icons.Material.Filled.Description" Expanded="true">
-        <MudNavLink Href="requests/my" Icon="@Icons.Material.Filled.Person">
-            My Requests
-        </MudNavLink>
-        <MudNavLink Href="requests/team" Icon="@Icons.Material.Filled.Group">
-            Team Requests
-        </MudNavLink>
-    </MudNavGroup>
-
-    <!-- Other Navigation Items -->
-    <MudNavLink Href="calendar" Icon="@Icons.Material.Filled.CalendarToday">
-        Calendar
+    <!-- Manager Dashboard -->
+    <MudNavLink Href="manager-dashboard" Icon="@Icons.Material.Filled.SupervisorAccount">
+        Manager Dashboard
     </MudNavLink>
 
     <MudNavLink Href="reports" Icon="@Icons.Material.Filled.Assessment">

@@ -96,7 +96,7 @@
                    Label="Approving Manager"
                    Variant="Variant.Outlined"
                    Clearable="true"
-                   HelperText="Optional: Select manager for approval routing"
+                   HelperText="Select manager for approval routing"
                    T="int?">
             @if (_managers != null)
             {
@@ -346,30 +346,11 @@
     {
         try
         {
-            var allUsers = await ExternalDataCache.GetCachedUsersAsync();
-            var grades = await ExternalDataCache.GetCachedGradesAsync();
-
-            // Find the managers based on grade
-            var managerGrade = grades.
-            FirstOrDefault(g => g.Name.Contains("Manager", StringComparison.OrdinalIgnoreCase));
-
-            if (managerGrade == null)
-            {
-                Logger.LogWarning("Manager grade not found in cached grades");
-                _managers = new List<UserDto>();
-                return;
-            }
-
-            // Filter users by manager grade
-            _managers = allUsers
-            .Where(u => u.GradeId == managerGrade.Id)
-            .OrderBy(u => u.LastName)
-            .ToList();
+            _managers = await ExternalDataCache.GetManagersAsync();
 
             if (_managers.Count == 0)
             {
-                Logger.LogWarning("No managers found in cached users");
-                Snackbar.Add("No managers found in the system.", Severity.Warning);
+                Snackbar.Add("No managers found in the system", Severity.Warning);
             }
         }
         catch (Exception ex)

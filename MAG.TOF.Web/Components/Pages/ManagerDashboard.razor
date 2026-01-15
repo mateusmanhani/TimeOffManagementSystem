@@ -1,0 +1,615 @@
+﻿@page "/manager-dashboard"
+@using MAG.TOF.Application.CQRS.Commands.ApproveRequest
+@using MAG.TOF.Application.CQRS.Commands.RejectRequest
+@using MAG.TOF.Application.CQRS.Queries.GetRequests
+@using MAG.TOF.Application.DTOs
+@using MAG.TOF.Application.Interfaces
+@using MAG.TOF.Domain.Entities
+@using MAG.TOF.Domain.Enums
+@using MAG.TOF.Web.Components.Dialogs
+@using MediatR
+@using MudBlazor;
+
+@inject ISnackbar Snackbar;
+@inject IExternalDataCache ExternalDataCache;
+@inject IMediator Mediator;
+@inject IDialogService DialogService;
+
+<PageTitle>Manager Dashboard</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" GutterBottom="true" Class="mt-4"> Manager DashBoard</MudText>
+
+    @* Manager Selection Dropdown*@
+    <MudPaper MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4" Elevation="3">
+        <MudSelect Value="_selectedManagerId"
+                   ValueChanged="OnManagerSelected"
+                   Label="Select Manager"
+                   Variant="Variant.Outlined"
+                   T="int?"
+                   Placeholder="Choose a manager to view their requests"
+                   Disabled="_isLoading">
+            @if (_managers != null)
+            {
+                @foreach (var manager in _managers)
+                {
+                    <MudSelectItem Value="@((int?)manager.Id)">@manager.FullName</MudSelectItem>
+                }
+            }
+        </MudSelect>
+    </MudPaper>
+
+
+    <MudGrid Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="@GetCardClass(RequestStatus.Pending)" 
+                      Elevation="@(_selectedStatus == RequestStatus.Pending ? 8 : 3)"
+                      Style="cursor:pointer"
+                      Clickable="true"
+                      @onclick="@(async (Microsoft.AspNetCore.Components.Web.MouseEventArgs __e) => await OnCardSelected(RequestStatus.Pending))">
+                <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty"
+                         Color="Color.Info"
+                         Size="Size.Large"
+                         Class="mr-4 align-self-center" />
+                <div>
+                    <MudText Typo="Typo.h4">@_pendingCount</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Info"><b>Pending</b></MudText>
+                    <MudText Typo="Typo.caption">Awaiting Approval</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="@GetCardClass(RequestStatus.Approved)" 
+                      Elevation="@(_selectedStatus == RequestStatus.Approved ? 8 : 3)"
+                      Style="cursor:pointer"
+                      Clickable="true"
+                      @onclick="@(async (Microsoft.AspNetCore.Components.Web.MouseEventArgs __e) => await OnCardSelected(RequestStatus.Approved))">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                         Color="Color.Success"
+                         Size="Size.Large"
+                         Class="mr-4 align-self-center" />
+                <div>
+                    <MudText Typo="Typo.h4">@_approvedCount</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Success"><b>Approved</b></MudText>
+                    <MudText Typo="Typo.caption">This Period</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="@GetCardClass(RequestStatus.Rejected)" 
+                      Elevation="@(_selectedStatus == RequestStatus.Rejected ? 8 : 3)"
+                      Style="cursor:pointer"
+                      Clickable="true"
+                      @onclick="@(async (Microsoft.AspNetCore.Components.Web.MouseEventArgs __e) => await OnCardSelected(RequestStatus.Rejected))">
+                <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Large" Class="mr-4 align-self-center" />
+                <div>
+                    <MudText Typo="Typo.h4">@_rejectedCount</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Error"><b>Rejected</b></MudText>
+                    <MudText Typo="Typo.caption">This Period</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="@GetCardClass(null)" 
+                      Elevation="@(!_selectedStatus.HasValue ? 8 : 3)"
+                      Style="cursor:pointer"
+                      Clickable="true"
+                      @onclick="@(async (Microsoft.AspNetCore.Components.Web.MouseEventArgs __e) => await OnCardSelected(null))">
+                <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Color="Color.Primary" Size="Size.Large" Class="mr-4 align-self-center" />
+                <div>
+                    <MudText Typo="Typo.h4">@_totalCount</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Primary"><b>Total</b></MudText>
+                    <MudText Typo="Typo.caption">All Requests</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h5" Class="mb-2">Recent Requests</MudText>
+
+    @if (_isLoading)
+    {
+        <MudPaper Class="pa-6 d-flex justify-center" Elevation="3">
+            <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+        </MudPaper>
+    }
+    else if (_allRequests == null || !_allRequests.Any())
+    {
+        <MudPaper Class="pa-6" Elevation="3">
+            <MudText Typo="Typo.body1" Align="Align.Center">
+                @if (!_selectedManagerId.HasValue)
+                {
+                    <span>Please select a manager and click "Load Requests"</span>
+                }
+                else
+                {
+                    <span>No requests found for the selected manager</span>
+
+                }
+            </MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudTable Items="@_filteredRequests" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="3">
+            <HeaderContent>
+                <MudTh>Request ID</MudTh>
+                <MudTh>User</MudTh>
+                <MudTh>Department</MudTh>
+                <MudTh>Dates</MudTh>
+                <MudTh>Duration</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd DataLabel="Request ID">@context.Id</MudTd>
+                <MudTd DataLabel="User">@GetUserName(context.UserId)</MudTd>
+                <MudTd DataLabel="Department">@GetDepartmentName(context.DepartmentId)</MudTd>
+                <MudTd DataLabel="Dates">
+                    @context.StartDate.ToString("MMM dd") - @context.EndDate.ToString("MMM dd, yyyy")
+                </MudTd>
+                <MudTd DataLabel="Duration">@context.TotalBusinessDays Days</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Color="@GetStatusColor(context.Status)" Size="Size.Small">
+                        @context.Status.ToString()
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+                        @if (context.Status == RequestStatus.Pending)
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.Check"
+                                         IconColor="Color.Success"
+                                         OnClick="@(() => ApproveRequest(context))">
+                                Approve
+                            </MudMenuItem>
+                            <MudMenuItem Icon="@Icons.Material.Filled.Close"
+                                         IconColor="Color.Error"
+                                         OnClick="@(() => RejectRequest(context))">
+                                Reject
+                            </MudMenuItem>
+                        }
+                    </MudMenu>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudContainer>
+
+    @code {
+
+    private List<UserDto>? _managers;
+    private List<UserDto>? _users;
+    private List<DepartmentDto>? _departments;
+    private int? _selectedManagerId;
+    List<Request>? _allRequests; // full set for selected manager
+    List<Request>? _filteredRequests; // displayed (filtered) list
+    private bool _isLoading = false;
+
+    private RequestStatus? _selectedStatus = null; // default to "All" (total)
+
+    private string GetCardClass(RequestStatus? status)
+    {
+        var baseClass = status switch
+        {
+            RequestStatus.Pending => "d-flex flex-row pa-4 stat-card stat-card-info",
+            RequestStatus.Approved => "d-flex flex-row pa-4 stat-card stat-card-success",
+            RequestStatus.Rejected => "d-flex flex-row pa-4 stat-card stat-card-error",
+            null => "d-flex flex-row pa-4 stat-card stat-card-primary",
+            _ => "d-flex flex-row pa-4 stat-card"
+        };
+
+        return _selectedStatus == status ? $"{baseClass} selected" : baseClass;
+    }
+
+    // Statiscs counters
+    private int _pendingCount = 0;
+    private int _approvedCount = 0;
+    private int _rejectedCount = 0;
+    private int _totalCount = 0;
+
+    /// <summary>
+    /// Load full request set for the manager, compute statistics and set the displayed list according to current filter.
+    /// </summary>
+    private async Task LoadAllRequestsForManager(int managerId)
+    {
+        _isLoading = true;
+        try
+        {
+            var result = await Mediator.Send(new GetRequestQuery(ManagerId: managerId, Status: null));
+
+            result.Switch(
+                requests =>
+                {
+                    // store full set
+                    _allRequests = requests;
+
+                    // compute counters from full set
+                    _pendingCount = requests.Count(r => r.Status == RequestStatus.Pending);
+                    _approvedCount = requests.Count(r => r.Status == RequestStatus.Approved);
+                    _rejectedCount = requests.Count(r => r.Status == RequestStatus.Rejected);
+                    _totalCount = requests.Count;
+
+                    // apply current filter to create displayed list
+                    _filteredRequests = _selectedStatus.HasValue
+                        ? _allRequests.Where(r => r.Status == _selectedStatus.Value).ToList()
+                        : new List<Request>(_allRequests);
+                },
+                errors =>
+                {
+                    var errorMessage = string.Join(", ", errors.Select(e => e.Description));
+                    Snackbar.Add($"Failed to load requests: {errorMessage}", Severity.Error);
+
+                    _allRequests = new List<Request>();
+                    _filteredRequests = new List<Request>();
+                    _pendingCount = _approvedCount = _rejectedCount = _totalCount = 0;
+                });
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("An unexpected error occurred while loading requests", Severity.Error);
+            _allRequests = new List<Request>();
+            _filteredRequests = new List<Request>();
+            _pendingCount = _approvedCount = _rejectedCount = _totalCount = 0;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadManagersAsync();
+        await LoadDepartmentsAsync();
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadManagersAsync()
+    {
+        try
+        {
+            _managers = await ExternalDataCache.GetManagersAsync();
+
+            if (_managers.Count == 0)
+            {
+                Snackbar.Add("No managers found in the system", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Failed to load managers. Please refresh the page.", Severity.Error);
+            _managers = new List<UserDto>();
+        }
+    }
+
+
+    private async Task LoadRequestsAsync(int? managerId, RequestStatus? status)
+    {
+        if (!managerId.HasValue)
+        {
+            Snackbar.Add("Please select a manager first", Severity.Warning);
+            return;
+        }
+
+        _isLoading = true;
+
+        try
+        {
+            var result = await Mediator.Send(new GetRequestQuery(
+                ManagerId: managerId,
+                Status: status));
+
+            // Handle ErrorOr result (side-effects only)
+            result.Switch(
+                requests =>
+                {
+                    // Success case: store the requests (this method used for filtered loads)
+                    _allRequests = requests;
+
+                    // apply current filter (in case _allRequests already contains full set we avoid extra fetch)
+                    _filteredRequests = _selectedStatus.HasValue
+                        ? _allRequests.Where(r => r.Status == _selectedStatus.Value).ToList()
+                        : new List<Request>(_allRequests);
+
+                    // Update statistics from full set if available
+                    if (_allRequests != null)
+                    {
+                        _pendingCount = _allRequests.Count(r => r.Status == RequestStatus.Pending);
+                        _approvedCount = _allRequests.Count(r => r.Status == RequestStatus.Approved);
+                        _rejectedCount = _allRequests.Count(r => r.Status == RequestStatus.Rejected);
+                        _totalCount = _allRequests.Count;
+                    }
+
+                    Snackbar.Add($"Loaded { _filteredRequests.Count } requests successfully");
+                },
+                errors =>
+                {
+                    // Error case: show error messages
+                    var errorMessage = string.Join(", ", errors.Select(e => e.Description));
+                    Snackbar.Add($"Failed to load requests: {errorMessage}", Severity.Error);
+
+                    _allRequests = new List<Request>();
+                    _filteredRequests = new List<Request>();
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("An unexpected error occurred. Please try again");
+
+            _allRequests = new List<Request>();
+            _filteredRequests = new List<Request>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        try
+        {
+            _users = await ExternalDataCache.GetCachedUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Failed to load users data", Severity.Error);
+            _users = new List<UserDto>();
+        }
+    }
+
+    private async Task LoadDepartmentsAsync()
+    {
+        try
+        {
+            _departments = await ExternalDataCache.GetCachedDepartmentsAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Failed to load departments data", Severity.Error);
+            _departments = new List<DepartmentDto>();
+        }
+    }
+
+    private async Task ApproveRequest(Request request)
+    {
+        if (!_selectedManagerId.HasValue)
+        {
+            Snackbar.Add("Please select a manager first", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var command = new ApproveRequestCommand(
+                RequestId: request.Id,
+                LoggedUserId: _selectedManagerId.Value);
+
+            var result = await Mediator.Send(command);
+
+            // Use Switch since we only need side-effects
+            result.Switch(
+                _ =>
+                {
+                    Snackbar.Add($"Request {request.Id} approved successfully", Severity.Success);
+
+                    // update the request in the UI list
+                    request.Status = RequestStatus.Approved;
+                    UpdateStatistics();   // Recalculate counters
+                    StateHasChanged();    // Force Blazor to re-render
+                },
+                errors =>
+                {
+                    var errorMessage = string.Join(", ", errors.Select(e => e.Description));
+                    Snackbar.Add($"Failed to approve request: {errorMessage}", Severity.Error);
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("An unexpected error occurred while approving the request", Severity.Error);
+        }
+    }
+
+    private async Task<string?> GetRejectionCommentAsync(Request request)
+    {
+        var parameters = new DialogParameters
+        {
+            { "RequestId", request.Id },
+            { "UserName", GetUserName(request.UserId) }
+        };
+
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+
+
+        var dialog = await DialogService.ShowAsync<RejectRequestDialog>(
+            "Reject Request",
+            parameters,
+            options);
+
+        var dialogResult = await dialog.Result;
+
+        // User cancelled
+        if (dialogResult.Canceled)
+            return null;
+
+        // Return the comment from dialog
+        return dialogResult.Data?.ToString();
+    }
+
+    private async Task RejectRequest(Request request)
+    {
+        if (!_selectedManagerId.HasValue)
+        {
+            Snackbar.Add("Please select a manager first", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+
+            // Get the rejection comment from dialog result
+            var rejectionComment = await GetRejectionCommentAsync(request);
+
+            if (string.IsNullOrWhiteSpace(rejectionComment))
+            {
+                Snackbar.Add("Rejection comment is required", Severity.Warning);
+                return;
+            }
+
+            // Send reject command
+            var command = new RejectRequestCommand(
+                RequestId: request.Id,
+                LoggedUserId: _selectedManagerId.Value,
+                RejectionReason: rejectionComment
+            );
+
+            var result = await Mediator.Send(command);
+
+            // Use Switch since we only need side-effects
+            result.Switch(
+                _ =>
+                {
+                    Snackbar.Add($"Request {request.Id} rejected successfully", Severity.Success);
+
+                    // update the request in the UI list
+                    request.Status = RequestStatus.Rejected;
+                    UpdateStatistics();   // Recalculate counters
+                    StateHasChanged();    // Force Blazor to re-render
+                },
+                errors =>
+                {
+                    var errorMessage = string.Join(", ", errors.Select(e => e.Description));
+                    Snackbar.Add($"Failed to reject request: {errorMessage}", Severity.Error);
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("An unexpected error occurred while rejecting the request", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Updates the statistics cards based on loaded requests
+    /// </summary>
+    private void UpdateStatistics()
+    {
+        if (_allRequests == null)
+        {
+            _pendingCount = 0;
+            _approvedCount = 0;
+            _rejectedCount = 0;
+            _totalCount = 0;
+            return;
+        }
+
+        _pendingCount = _allRequests.Count(r => r.Status == RequestStatus.Pending);
+        _approvedCount = _allRequests.Count(r => r.Status == RequestStatus.Approved);
+        _rejectedCount = _allRequests.Count(r => r.Status == RequestStatus.Rejected);
+        _totalCount = _allRequests.Count;
+    }
+
+    // ============================================
+    // EVENT HANDLERS
+    // ============================================
+
+    /// <summary>
+    /// Event handler triggered when manager selection changes
+    /// Automatically loads requests for the selected manager
+    /// </summary>
+    private async Task OnManagerSelected(int? managerId)
+    {
+        _selectedManagerId = managerId;
+
+        if (managerId.HasValue)
+        {
+            _selectedStatus ??= null;
+
+            // Load full set and compute counts, then displayed filtered list will be set inside
+            await LoadAllRequestsForManager(managerId.Value);
+        }
+        else
+        {
+            // Clear data if selection is cleared
+            _allRequests = null;
+            _filteredRequests = null;
+            _selectedStatus = null;
+            UpdateStatistics();
+        }
+    }
+
+    private async Task OnCardSelected(RequestStatus? status)
+    {
+        _selectedStatus = status;
+
+        // update displayed list from already loaded full set when possible
+        if (_allRequests != null)
+        {
+            _filteredRequests = _selectedStatus.HasValue
+                ? _allRequests.Where(r => r.Status == _selectedStatus.Value).ToList()
+                : new List<Request>(_allRequests);
+
+            // update UI immediately
+            StateHasChanged();
+            return;
+        }
+
+        // otherwise load full set for current manager then apply filter
+        if (_selectedManagerId.HasValue)
+        {
+            await LoadAllRequestsForManager(_selectedManagerId.Value);
+            // ensure UI refresh after load
+            StateHasChanged();
+        }
+        else
+        {
+            Snackbar.Add("Please select a manager first", Severity.Warning);
+        }
+    }
+
+    // ============================================
+    // HELPER METHODS
+    // ============================================
+
+    /// <summary>
+    /// Returns the appropriate color for each request status
+    /// Used in the status chip
+    /// </summary>
+    private Color GetStatusColor(RequestStatus status)
+    {
+        return status switch
+        {
+            RequestStatus.Approved => Color.Success,
+            RequestStatus.Rejected => Color.Error,
+            RequestStatus.Pending => Color.Warning,
+            RequestStatus.Draft => Color.Default,
+            _ => Color.Info
+        };
+    }
+
+    private string GetDepartmentName(int departmentId)
+    {
+        var department = _departments?.FirstOrDefault(d => d.Id == departmentId);
+        return department?.Name ?? $"Department {departmentId}";
+    }
+
+    private string GetUserName(int userId)
+    {
+        var user = _users.FirstOrDefault(u => u.Id == userId);
+        return user?.FullName ?? $"User {userId}";
+    }
+}
+
