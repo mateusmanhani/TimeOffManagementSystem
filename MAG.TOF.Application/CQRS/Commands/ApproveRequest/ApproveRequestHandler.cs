@@ -1,5 +1,6 @@
 ﻿using ErrorOr;
 using MAG.TOF.Application.Interfaces;
+using MAG.TOF.Application.Messaging;
 using MAG.TOF.Application.Validation;
 using MAG.TOF.Domain.Enums;
 using MediatR;
@@ -10,15 +11,21 @@ namespace MAG.TOF.Application.CQRS.Commands.ApproveRequest
     public class ApproveRequestHandler : IRequestHandler<ApproveRequestCommand, ErrorOr<Success>>
     {
         private readonly ExternalDataValidator _externalDataValidator;
+        private readonly IExternalDataCache _externalDataCache;
+        private readonly IEmailQueueService _emailQueueService;
         private readonly IRequestRepository _repository;
         private readonly ILogger<ApproveRequestHandler> _logger;
 
         public ApproveRequestHandler(
             ExternalDataValidator externalDataValidator,
+            IExternalDataCache externalDataCache,
+            IEmailQueueService emailQueueService,
             IRequestRepository repository,
             ILogger<ApproveRequestHandler> logger)
         {
             _externalDataValidator = externalDataValidator;
+            _externalDataCache = externalDataCache;
+            _emailQueueService = emailQueueService;
             _repository = repository;
             _logger = logger;
         }
@@ -77,7 +84,30 @@ namespace MAG.TOF.Application.CQRS.Commands.ApproveRequest
 
                 await _repository.UpdateRequestAsync(existingRequest, cancellationToken);
                 _logger.LogInformation("Request {RequestId} approved by manager {ManagerId}", command.RequestId, command.LoggedUserId);
-                
+
+                // Try to enqueue email notification (not blocking)
+                try
+                {
+                    var users = await _externalDataCache.GetCachedUsersAsync();
+                    var requestor = users.FirstOrDefault(u => u.Id == existingRequest.UserId);
+                    var requestorEmail = requestor?.Email;
+
+                    if (!string.IsNullOrEmpty(requestorEmail))
+                    {
+                        var emailMsg = new EmailQueueMessage(
+                            RequestorEmail: requestorEmail,
+                            Subject: $"Your request #{existingRequest.Id} was approved",
+                            BodyHtml: $"<p>Hi {requestor?.FullName ?? "user"},</p><p>Your request #{existingRequest.Id} has been <strong>approved</strong>.</p>"
+                        );
+
+                        await _emailQueueService.EnqueueEmailAsync(emailMsg, cancellationToken);
+                        _logger.LogInformation("Enqueued approval email for request {RequestId} to requestor {RequestorUserId}", existingRequest.Id, existingRequest.UserId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to enqueue approval email for request {RequestId}", existingRequest.Id);
+                }
                 return Result.Success;
             }
             catch (Exception ex)

@@ -1,3 +1,4 @@
+using Azure.Messaging.ServiceBus;
 using MAG.TOF.Application.CQRS.Commands.CreateRequest;
 using MAG.TOF.Application.Interfaces;
 using MAG.TOF.Application.Validation;
@@ -63,6 +64,13 @@ try
     builder.Services.AddScoped<ExternalDataValidator>();
 
     builder.Services.AddScoped<RequestValidationService>();
+
+    // Register Azure Service Bus client
+    builder.Services.AddSingleton(_ => new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]
+        ?? throw new InvalidOperationException("ServiceBus:ConnectionString not configured")));
+
+    // Register service bus
+    builder.Services.AddSingleton<IEmailQueueService, ServiceBusEmailQueueService>();
 
     // Register MudBlazor Services
     builder.Services.AddMudServices();

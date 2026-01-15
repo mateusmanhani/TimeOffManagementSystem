@@ -47,7 +47,7 @@ namespace MAG.TOF.Application.CQRS.Commands.RecallRequest
                     _logger.LogWarning("RecallRequestHandler: Request {RequestId} cannot be recalled. Current status: {Status}", 
                         command.RequestId, existingRequest.Status);
                     return Error.Validation("InvalidStatusForRecall", 
-                        $"Only pending or approved requests can be recalled. Current status: {existingRequest.Status}");
+                        $"Only pending requests can be recalled. Current status: {existingRequest.Status}");
                 }
 
                 // check if the logged user is the manager assigned to the request
