@@ -42,7 +42,7 @@ namespace MAG.TOF.Application.CQRS.Commands.ApproveRequest
                 }
 
                 // Check if request exists
-                var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId);
+                var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId, cancellationToken);
                 if (existingRequest is null)
                 {
                     _logger.LogWarning("Request {RequestId} not found for approval by manager {ManagerId}", command.RequestId, command.LoggedUserId);
@@ -75,7 +75,7 @@ namespace MAG.TOF.Application.CQRS.Commands.ApproveRequest
                 existingRequest.Status = RequestStatus.Approved;
                 existingRequest.ManagerId = command.LoggedUserId;
 
-                await _repository.UpdateRequestAsync(existingRequest);
+                await _repository.UpdateRequestAsync(existingRequest, cancellationToken);
                 _logger.LogInformation("Request {RequestId} approved by manager {ManagerId}", command.RequestId, command.LoggedUserId);
                 
                 return Result.Success;

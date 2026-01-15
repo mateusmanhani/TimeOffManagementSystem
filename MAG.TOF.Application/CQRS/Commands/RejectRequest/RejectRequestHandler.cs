@@ -42,7 +42,7 @@ namespace MAG.TOF.Application.CQRS.Commands.RejectRequest
                 }
 
                 // Validate request exists
-                var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId);
+                var existingRequest = await _repository.GetRequestByIdAsync(command.RequestId, cancellationToken);
                 if (existingRequest is null)
                 {
                     _logger.LogError("Request not found: {RequestId}", command.RequestId);
@@ -75,7 +75,7 @@ namespace MAG.TOF.Application.CQRS.Commands.RejectRequest
                 existingRequest.ManagerId = command.LoggedUserId;
                 existingRequest.ManagerComment = command.RejectionReason;
 
-                await _repository.UpdateRequestAsync(existingRequest);
+                await _repository.UpdateRequestAsync(existingRequest, cancellationToken);
                 _logger.LogInformation("Request {RequestId} rejected by Manager {ManagerId}", command.RequestId, command.LoggedUserId);
                 return Result.Success;
             }

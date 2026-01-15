@@ -116,3 +116,47 @@ h1:focus {
 .stat-card-primary:hover .mud-typography {
     color: white !important;
 }
+
+/* Info - Blue - Selected */
+.stat-card-info.selected {
+    background: #0056b3;
+    color: white;
+}
+
+.stat-card-info.selected .mud-icon-root,
+.stat-card-info.selected .mud-typography {
+    color: white !important;
+}
+
+/* Success - Green - Selected */
+.stat-card-success.selected {
+    background: #007700;
+    color: white;
+}
+
+.stat-card-success.selected .mud-icon-root,
+.stat-card-success.selected .mud-typography {
+    color: white !important;
+}
+
+/* Error - Red - Selected */
+.stat-card-error.selected {
+    background: #a40000;
+    color: white;
+}
+
+.stat-card-error.selected .mud-icon-root,
+.stat-card-error.selected .mud-typography {
+    color: white !important;
+}
+
+/* Primary - Purple/Blue - Selected */
+.stat-card-primary.selected {
+    background: #6f2c91;
+    color: white;
+}
+
+.stat-card-primary.selected .mud-icon-root,
+.stat-card-primary.selected .mud-typography {
+    color: white !important;
+}

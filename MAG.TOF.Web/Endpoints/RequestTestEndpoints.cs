@@ -5,8 +5,7 @@ using MAG.TOF.Application.CQRS.Commands.DeleteRequest;
 using MAG.TOF.Application.CQRS.Commands.RecallRequest;
 using MAG.TOF.Application.CQRS.Commands.RejectRequest;
 using MAG.TOF.Application.CQRS.Commands.UpdateRequest;
-using MAG.TOF.Application.CQRS.Queries.GetPendingRequests;
-using MAG.TOF.Application.CQRS.Queries.GetUserRequests;
+using MAG.TOF.Application.CQRS.Queries.GetRequests;
 using MediatR;
 
 namespace MAG.TOF.Web.Endpoints
@@ -25,7 +24,7 @@ namespace MAG.TOF.Web.Endpoints
             // Get Pending requests for manager
             group.MapGet("/pending/manager/{loggedUserId}", async (int loggedUserId, IMediator mediator) =>
             {
-                var query = new GetPendingRequestsQuery(loggedUserId);
+                var query = new GetRequestQuery(loggedUserId);
                 var result = await mediator.Send(query);
 
                 return result.Match(
@@ -63,7 +62,7 @@ namespace MAG.TOF.Web.Endpoints
             // Get Requests by User
             group.MapGet("/user/{userId}", async (int userId, IMediator mediator) =>
             {
-                var query = new GetRequestsByUserQuery(userId);
+                var query = new GetRequestQuery(userId);
                 var result = await mediator.Send(query);
 
                 return result.Match(
