@@ -1,0 +1,338 @@
+@using MAG.TOF.Application.CQRS.Commands.UpdateRequest
+@using MAG.TOF.Application.DTOs
+@using MAG.TOF.Application.Interfaces
+@using MAG.TOF.Domain.Entities
+@using MAG.TOF.Domain.Enums
+@using MAG.TOF.Domain.Services
+@using MediatR
+@using MudBlazor
+
+@inject IMediator Mediator
+@inject ILogger<EditRequestDialog> Logger
+@inject ISnackbar Snackbar
+@inject RequestValidationService ValidationService
+@inject IExternalDataCache ExternalDataCache
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6" GutterBottom="true">Edit Request @RequestToEdit?.Id</MudText>
+
+        <MudForm @ref="_form">
+            <MudStack Spacing="3" Class="pa-4">
+
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect @bind-Value="model.UserId"
+                                    Label="User"
+                                    Variant="Variant.Outlined"
+                                    Required="true"
+                                    HelperText="User (not editable)"
+                                    T="int?"
+                                    Disabled="true">
+                              @if (_users != null)
+                              {
+                              @foreach (var user in _users)
+                              {
+                                    <MudSelectItem Value="@((int?)user.Id)">@user.FullName</MudSelectItem>
+                              }
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudSelect @bind-Value="model.DepartmentId"
+                                   Label="Department"
+                                   Variant="Variant.Outlined"
+                                   Required="true"
+                                   HelperText="Department (not editable)"
+                                   T="int?"
+                                   Disabled="true">
+                            @if (_departments != null)
+                            {
+                            @foreach (var department in _departments)
+                            {
+                                <MudSelectItem Value="@((int?)department.Id)">@department.Name</MudSelectItem>
+                            }
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker @bind-Date="startDate"
+                                       Label="Date From"
+                                       Variant="Variant.Outlined"
+                                       MinDate="DateTime.Today"
+                                       HelperText="Start date cannot be in the past" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker @bind-Date="endDate"
+                                       Label="Date To"
+                                       Variant="Variant.Outlined"
+                                       MinDate="startDate ?? DateTime.Today"
+                                       HelperText="End date must be after start date" />
+                    </MudItem>
+                </MudGrid>
+
+                @if (startDate.HasValue && endDate.HasValue)
+                {
+                    var businessDaysText = CalculateBusinessDays();
+
+                    @if (businessDaysText == "Invalid")
+                    {
+                        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+                            Invalid date range - end date must be after start date
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                            <strong>Total: @businessDaysText Business Days</strong> (Excluding Weekends)
+                        </MudAlert>
+                    }
+                }
+
+                <MudSelect @bind-Value="model.ManagerId"
+                           Label="Approving Manager"
+                           Variant="Variant.Outlined"
+                           Clearable="true"
+                           HelperText="Select manager for approval routing"
+                           T="int?">
+                    @if (_managers != null)
+                    {
+                        @foreach (var manager in _managers)
+                        {
+                            <MudSelectItem Value="@((int?)manager.Id)">@manager.FullName</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   OnClick="HandleUpdateDraft"
+                   Disabled="@_isSubmitting">
+            @if (_isSubmitting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ml-2">Updating...</MudText>
+            }
+            else
+            {
+                <span>Update Draft</span>
+            }
+        </MudButton>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="HandleUpdateAndSubmit"
+                   Disabled="@_isSubmitting">
+            @if (_isSubmitting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ml-2">Submitting...</MudText>
+            }
+            else
+            {
+                <span>Update & Submit</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] public Request RequestToEdit { get; set; } = default!;
+    [Parameter] public int? LoggedUserId { get; set; }
+
+    private MudForm? _form;
+    private bool _isSubmitting = false;
+
+    private RequestFormModel model = new();
+    private DateTime? startDate;
+    private DateTime? endDate;
+
+    private List<UserDto>? _managers;
+    private List<DepartmentDto>? _departments;
+    private List<UserDto>? _users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadManagersAsync();
+        await LoadDepartmentsAsync();
+        await LoadUsersAsync();
+
+        if (RequestToEdit != null)
+        {
+            model.UserId = RequestToEdit.UserId;
+            model.DepartmentId = RequestToEdit.DepartmentId;
+            model.ManagerId = RequestToEdit.ManagerId;
+            startDate = RequestToEdit.StartDate;
+            endDate = RequestToEdit.EndDate;
+        }
+    }
+
+    private async Task HandleUpdateDraft()
+    {
+        _isSubmitting = true;
+        try
+        {
+            if (!model.UserId.HasValue || model.UserId.Value <= 0)
+            {
+                Snackbar.Add("User is required.", Severity.Warning);
+                return;
+            }
+
+            var command = new UpdateRequestCommand(
+                LoggedUserId: LoggedUserId ?? model.UserId!.Value,
+                RequestId: RequestToEdit.Id,
+                StartDate: startDate!.Value,
+                EndDate: endDate!.Value,
+                ManagerId: model.ManagerId,
+                Status: RequestStatus.Draft
+            );
+
+            var result = await Mediator.Send(command);
+
+            result.Switch(
+                _ =>
+                {
+                    Snackbar.Add($"Request updated to Draft successfully!", Severity.Success);
+                    MudDialog.Close();
+                },
+                errors =>
+                {
+                    var errorMessage = string.Join(", ", errors.Select(e => e.Description));
+                    Snackbar.Add(errorMessage, Severity.Error);
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error during request update");
+            Snackbar.Add("An unexpected error occurred. Please try again.", Severity.Error);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task HandleUpdateAndSubmit()
+    {
+        _isSubmitting = true;
+        try
+        {
+            if (!model.UserId.HasValue || model.UserId.Value <= 0)
+            {
+                Snackbar.Add("User is required.", Severity.Warning);
+                return;
+            }
+
+            var command = new UpdateRequestCommand(
+                LoggedUserId: LoggedUserId ?? model.UserId!.Value,
+                RequestId: RequestToEdit.Id,
+                StartDate: startDate!.Value,
+                EndDate: endDate!.Value,
+                ManagerId: model.ManagerId,
+                Status: RequestStatus.Pending
+            );
+
+            var result = await Mediator.Send(command);
+
+            result.Switch(
+                _ =>
+                {
+                    Snackbar.Add($"Request updated and submitted successfully!", Severity.Success);
+                    MudDialog.Close();
+                },
+                errors =>
+                {
+                    var errorMessage = string.Join(", ", errors.Select(e => e.Description));
+                    Snackbar.Add(errorMessage, Severity.Error);
+                }
+            );
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error during request submit");
+            Snackbar.Add("An unexpected error occurred. Please try again.", Severity.Error);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task LoadUsersAsync()
+    {
+        try
+        {
+            _users = await ExternalDataCache.GetCachedUsersAsync();
+        }
+        catch
+        {
+            _users = new List<UserDto>();
+        }
+    }
+
+    private async Task LoadManagersAsync()
+    {
+        try
+        {
+            _managers = await ExternalDataCache.GetManagersAsync();
+        }
+        catch
+        {
+            _managers = new List<UserDto>();
+        }
+    }
+
+    private async Task LoadDepartmentsAsync()
+    {
+        try
+        {
+            _departments = await ExternalDataCache.GetCachedDepartmentsAsync();
+        }
+        catch
+        {
+            _departments = new List<DepartmentDto>();
+        }
+    }
+
+    private string CalculateBusinessDays()
+    {
+        if (!startDate.HasValue || !endDate.HasValue)
+            return "0";
+
+        try
+        {
+            int businessDays = ValidationService.CalculateBusinessDays(
+                startDate.Value,
+                endDate.Value);
+            return businessDays.ToString();
+        }
+        catch
+        {
+            return "Invalid";
+        }
+    }
+
+    private class RequestFormModel
+    {
+        public int? UserId { get; set; }
+        public int? DepartmentId { get; set; }
+        public int? ManagerId { get; set; }
+    }
+}

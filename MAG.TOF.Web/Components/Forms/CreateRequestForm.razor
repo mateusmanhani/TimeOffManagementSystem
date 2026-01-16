@@ -19,7 +19,8 @@
         <!-- User and Department Selection Row -->
         <MudGrid>
             <MudItem xs="12" sm="6">
-                <MudSelect @bind-Value="model.UserId"
+                <MudSelect Value="model.UserId"
+                            ValueChanged="OnUserChanged"
                             Label="User"
                             Variant="Variant.Outlined"
                             Required="true"
@@ -36,20 +37,11 @@
             </MudItem>
 
             <MudItem xs="12" sm="6">
-                <MudSelect @bind-Value="model.DepartmentId"
-                           Label="Department"
-                           Variant="Variant.Outlined"
-                           Required="true"
-                           HelperText="Select Your Department"
-                           T="int?">
-                    @if (_departments != null)
-                    {
-                    @foreach (var department in _departments)
-                    {
-                        <MudSelectItem Value="@((int?)department.Id)">@department.Name</MudSelectItem>
-                    }
-                    }
-                </MudSelect>
+                <!-- Department derived from selected user -->
+                <MudTextField Label="Department"
+                              Variant="Variant.Outlined"
+                              Value="@_selectedDepartmentName"
+                              Disabled="true" />
             </MudItem>
         </MudGrid>
 
@@ -163,11 +155,34 @@
     // User Data from cache
     private List<UserDto>? _users;
 
+    // derived department name for selected user
+    private string _selectedDepartmentName = string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadManagersAsync();
         await LoadDepartmentsAsync();
         await LoadUsersAsync();
+    }
+
+    private void OnUserChanged(int? userId)
+    {
+        model.UserId = userId;
+
+        if (userId.HasValue && _users != null)
+        {
+            var u = _users.FirstOrDefault(x => x.Id == userId.Value);
+            if (u != null)
+            {
+                model.DepartmentId = u.DepartmentId;
+                var dept = _departments?.FirstOrDefault(d => d.Id == u.DepartmentId);
+                _selectedDepartmentName = dept?.Name ?? string.Empty;
+                return;
+            }
+        }
+
+        model.DepartmentId = null;
+        _selectedDepartmentName = string.Empty;
     }
 
     /// <summary>

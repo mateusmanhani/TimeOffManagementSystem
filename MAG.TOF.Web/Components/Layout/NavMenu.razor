@@ -18,9 +18,9 @@
 
     <!-- Navigation Links -->
     
-    <!-- Dashboard - Home page -->
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
-        My Requets
+    <!-- Dashboard - MyRequests -->
+    <MudNavLink Href="/my-requests" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard" Class="@(IsHomeActive ? "mud-nav-link-active" : null)">
+        My Requests
     </MudNavLink>
 
     <!-- Manager Dashboard -->
@@ -80,6 +80,8 @@
         // Subscribe to navigation changes to update active link styling
         NavigationManager.LocationChanged += OnLocationChanged;
     }
+
+    private bool IsHomeActive => string.IsNullOrEmpty(currentUrl) || currentUrl.Equals("my-requests", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Updates current URL when user navigates to a different page
