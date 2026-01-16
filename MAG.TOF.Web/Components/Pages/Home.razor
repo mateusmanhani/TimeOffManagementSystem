@@ -1,153 +1,18 @@
-﻿@page "/"
+﻿@page "/home"
+@page "/"
+@inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
 <PageTitle>My Requests</PageTitle>
 
-<div class="holiday-dashboard">
-    <div class="dashboard-header">
-        <h1>My Requests</h1>
-    </div>
 
-    <!-- Summary Statistics Cards -->
-    <div class="stats-grid">
-        <div class="stat-card stat-card-blue">
-            <div class="stat-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
-                </svg>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number">5</div>
-                <div class="stat-label">In Progress</div>
-                <div class="stat-description">Drafts & Awaiting</div>
-            </div>
-        </div>
 
-        <div class="stat-card stat-card-green">
-            <div class="stat-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
-                </svg>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number">12</div>
-                <div class="stat-label">Approved</div>
-                <div class="stat-description">This Year</div>
-            </div>
-        </div>
+@code {
+    protected override void OnInitialized()
+    {
+        // Redirect root URL to the My Requests page
+        NavigationManager.NavigateTo("/my-requests", replace: true);
+    }
+}
 
-        <div class="stat-card stat-card-red">
-            <div class="stat-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-                </svg>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number">2</div>
-                <div class="stat-label">Rejected</div>
-                <div class="stat-description">Attention needed</div>
-            </div>
-        </div>
-
-        <div class="stat-card stat-card-purple">
-            <div class="stat-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
-                </svg>
-            </div>
-            <div class="stat-content">
-                <div class="stat-number">18</div>
-                <div class="stat-label">Remaining Days</div>
-                <div class="stat-description">Annual Allowance</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Requests Table -->
-    <div class="recent-requests">
-        <h2>Recent Requests</h2>
-        <div class="table-container">
-            <table class="requests-table">
-                <thead>
-                    <tr>
-                        <th>Request ID</th>
-                        <th>Dates</th>
-                        <th>Duration</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>5900001</td>
-                        <td>Nov 15 - Nov 21, 2023</td>
-                        <td>5 Business Days</td>
-                        <td><span class="status-badge status-awaiting">Awaiting Approval</span></td>
-                        <td>
-                            <div class="dropdown">
-                                <button class="action-button">⋮</button>
-                                <div class="dropdown-content">
-                                    <a href="#">View</a>
-                                    <a href="#">Edit</a>
-                                    <a href="#">Recall</a>
-                                    <a href="#">Delete</a>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>5900022</td>
-                        <td>Nov 14 - Nov 21, 2023</td>
-                        <td>5 Business Days</td>
-                        <td><span class="status-badge status-draft">Draft</span></td>
-                        <td>
-                            <div class="dropdown">
-                                <button class="action-button">⋮</button>
-                                <div class="dropdown-content">
-                                    <a href="#">View</a>
-                                    <a href="#">Edit</a>
-                                    <a href="#">Delete</a>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>5900033</td>
-                        <td>Nov 17 - Nov 17, 2023</td>
-                        <td>5 Business Days</td>
-                        <td><span class="status-badge status-awaiting">Awaiting Approval</span></td>
-                        <td>
-                            <div class="dropdown">
-                                <button class="action-button">⋮</button>
-                                <div class="dropdown-content">
-                                    <a href="#">View</a>
-                                    <a href="#">Edit</a>
-                                    <a href="#">Recall</a>
-                                    <a href="#">Delete</a>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>5900024</td>
-                        <td>Nov 15 - Nov 21, 2023</td>
-                        <td>5 Business Days</td>
-                        <td><span class="status-badge status-draft">Draft</span></td>
-                        <td>
-                            <div class="dropdown">
-                                <button class="action-button">⋮</button>
-                                <div class="dropdown-content">
-                                    <a href="#">View</a>
-                                    <a href="#">Edit</a>
-                                    <a href="#">Delete</a>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+   

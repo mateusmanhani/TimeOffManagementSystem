@@ -86,9 +86,19 @@ namespace MAG.TOF.Application.CQRS.Commands.UpdateRequest
                     return Error.Validation("InvalidDateRange", "The start date must be before the end date.");
                 }
 
+                // Calculate and validate business days
+                var updatedBusinessDays = _requestValidator.CalculateBusinessDays(command.StartDate, command.EndDate);
+
+                if (updatedBusinessDays <= 0)
+                {
+                    _logger.LogWarning("No business days in the selected date range");
+                    return Error.Validation("Request.NoBusinessDays", "No business days in the selected date range");
+                }
+
                 // Update existing request
                 existingRequest.StartDate = command.StartDate;
                 existingRequest.EndDate = command.EndDate;
+                existingRequest.TotalBusinessDays = updatedBusinessDays;
                 existingRequest.Status = command.Status;
 
                 // Validate Manager if provided

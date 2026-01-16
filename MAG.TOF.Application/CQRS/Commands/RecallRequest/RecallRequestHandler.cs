@@ -50,11 +50,11 @@ namespace MAG.TOF.Application.CQRS.Commands.RecallRequest
                         $"Only pending requests can be recalled. Current status: {existingRequest.Status}");
                 }
 
-                // check if the logged user is the manager assigned to the request
-                if (existingRequest.ManagerId != command.LoggedUserId)
+                // check if the logged user is the owner of the request
+                if (existingRequest.UserId != command.LoggedUserId)
                 {
-                    _logger.LogWarning("Only the Manager assigned to the request may recall a request.");
-                    return Error.Unauthorized("Unauthorized", "Only the Manager assigned to the request may recall a request.");
+                    _logger.LogWarning("Only the owner of the request may recall a request.");
+                    return Error.Unauthorized("Unauthorized", "Only the owner of the request may recall a request..");
                 }
 
                 // Update request status to 'Recalled'
