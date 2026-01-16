@@ -11,6 +11,7 @@ namespace MAG.TOF.Application.Validation
         private readonly ILogger<ExternalDataValidator> _logger;
 
         // todo create GradeLevel enum (in domain) and extension class for emthods like isManager() and use it here to check manager
+        private const int ManagerGradeId = 5; // Corresponding to MAG.CORE grade ID for "Manager"
 
         public ExternalDataValidator(
             IExternalDataCache externalDataCache,
@@ -55,18 +56,10 @@ namespace MAG.TOF.Application.Validation
             {
                 return userResult.Errors;
             }
-
+            // Store manager object
             var manager = userResult.Value;
 
-            // Step 2: Get grades
-            var grades = await _externalDataCache.GetCachedGradesAsync();
-
-            // Step 3: Check if user has manager grade
-            var isManagerGrade = grades.Any(g =>
-                g.Id == manager.GradeId &&
-                g.Name.Contains("Manager", StringComparison.OrdinalIgnoreCase));
-
-            if (!isManagerGrade)
+            if (manager.GradeId != ManagerGradeId)
             {
                 _logger.LogWarning("User {ManagerId} (GradeId: {GradeId}) is not a manager",
                     managerId, manager.GradeId);

@@ -14,6 +14,8 @@ namespace MAG.TOF.Infrastructure.Services
         private const string DepartmentsCacheKey = "departments_all";
         private const string GradesCacheKey = "grades_all";
 
+        private const int ManagerGradeId = 5; // Corresponding to MAG.CORE grade ID for "Manager"
+
         public ExternalDataCache(
             ICoreApiService coreApiClient,
             ICacheService cacheService,
@@ -56,21 +58,10 @@ namespace MAG.TOF.Infrastructure.Services
             try
             {
                 var users = await GetCachedUsersAsync();
-                var grades = await GetCachedGradesAsync();
-
-                // find the manager grade
-                var managerGrade = grades.
-                    FirstOrDefault(g => g.Name.Contains("Manager", StringComparison.OrdinalIgnoreCase));
-
-                if (managerGrade == null)
-                {
-                    _logger.LogWarning("Manager grade not found in cached grades");
-                    return new List<UserDto>();
-                }
 
                 // filter users by manager grade
                 var managers = users
-                    .Where(u => u.GradeId == managerGrade.Id)
+                    .Where(u => u.GradeId == ManagerGradeId)
                     .ToList();
 
                 if (managers.Count == 0)
