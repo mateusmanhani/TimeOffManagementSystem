@@ -1,5 +1,6 @@
 ﻿using ErrorOr;
 using MAG.TOF.Application.Interfaces;
+using MAG.TOF.Application.Messaging;
 using MAG.TOF.Application.Validation;
 using MAG.TOF.Domain.Entities;
 using MAG.TOF.Domain.Services;
@@ -17,18 +18,24 @@ namespace MAG.TOF.Application.CQRS.Commands.CreateRequest
 
         private readonly RequestValidationService _requestValidationService;
         private readonly ExternalDataValidator _externalDataValidator;
+        private readonly IExternalDataCache _externalDataCache;
+        private readonly IMessagePublisher _messagePublisher;
 
 
         public CreateRequestHandler(IRequestRepository repository,
             ILogger<CreateRequestHandler> logger,
             RequestValidationService validationService,
-            ExternalDataValidator referenceValidation
+            ExternalDataValidator referenceValidation,
+            IExternalDataCache externalDataCache,
+            IMessagePublisher messagePublisher
             )
         {
             _repository = repository;
             _logger = logger;
             _requestValidationService = validationService;
             _externalDataValidator = referenceValidation;
+            _externalDataCache = externalDataCache;
+            _messagePublisher = messagePublisher;
         }
 
         public async Task<ErrorOr<int>> Handle(CreateRequestCommand command, CancellationToken cancellationToken)
@@ -67,6 +74,38 @@ namespace MAG.TOF.Application.CQRS.Commands.CreateRequest
 
                 _logger.LogInformation("Successfully created request with Id: {RequestId} for UserId: {UserId}",
                     request.Id, request.UserId);
+
+                // Try to publish email notification
+                try
+                {
+                    var users = await _externalDataCache.GetCachedUsersAsync();
+                    var requestor = users.FirstOrDefault(u => u.Id == command.UserId);
+                    var manager = users.FirstOrDefault(u => u.Id == command.ManagerId);
+                    var requestorName = requestor?.FullName;
+                    var managerEmail = manager?.Email;
+
+                    if (!string.IsNullOrEmpty(managerEmail))
+                    {
+
+                        var emailMsg = new EmailNotificationMessage(
+                            RecepientEmail: managerEmail,
+                            Subject: "Pending",
+                            BodyHtml: $"<p>Hi {requestor?.FullName ?? "user"},</p>" +
+                                      $"<p>A request <strong>#{request.Id}</strong> from <strong>{request.StartDate:yyyy-MM-dd}</strong> to <strong>{request.EndDate:yyyy-MM-dd}</strong> has been <strong>submitted</strong>.</p>" +
+                                      $"<p>By User: <strong>{requestorName}</strong></p>",
+                            StartDate: request.StartDate,
+                            EndDate: request.EndDate,
+                            RequestorName: requestorName
+                        );
+
+                        await _messagePublisher.PublishAsync(emailMsg, cancellationToken);
+                        _logger.LogInformation("Published submited email notification message for request {RequestId} to manager {ManagerId}", request.Id, request.ManagerId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to Publish submited email notification message for request {RequestId}", request.Id);
+                }
                 return request.Id;
             }
             catch (Exception ex)

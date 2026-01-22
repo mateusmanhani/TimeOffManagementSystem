@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="Functions/MAG.TOF.Worker.csproj" Id="3b992e2f-5936-4265-b273-b73ba811f307" />
   <Project Path="MAG.TOF.Application/MAG.TOF.Application.csproj" Id="bf1553e9-1101-4a4b-9e83-b349866c34bc" />
   <Project Path="MAG.TOF.Domain/MAG.TOF.Domain.csproj" Id="1779c9ea-6329-435d-945a-0a1ac06306ee" />
   <Project Path="MAG.TOF.Infrastructure/MAG.TOF.Infrastructure.csproj" Id="1aa0d23c-2f08-4c7a-81f4-2fc566f03dd5" />

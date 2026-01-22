@@ -69,8 +69,8 @@ try
     builder.Services.AddSingleton(_ => new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]
         ?? throw new InvalidOperationException("ServiceBus:ConnectionString not configured")));
 
-    // Register service bus
-    builder.Services.AddSingleton<IEmailQueueService, ServiceBusEmailQueueService>();
+    // Register service bus and Topic publisher
+    builder.Services.AddSingleton<IMessagePublisher, ServiceBusTopicPublisher>();
 
     // Register MudBlazor Services
     builder.Services.AddMudServices();
@@ -111,8 +111,6 @@ try
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddSignInManager()
         .AddDefaultTokenProviders();
-
-    builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
     var app = builder.Build();
 

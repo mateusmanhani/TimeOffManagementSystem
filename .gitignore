@@ -17,3 +17,7 @@
 /MAG.TOF.Infrastructure/bin/Debug/net8.0
 /MudBlazor-Architecture-Guide.md
 
+/MAG.TOF.Application/bin/Release/net8.0
+/MAG.TOF.Infrastructure/bin/Release/net8.0
+/MAG.TOF.Domain/bin/Release/net8.0
+/publish

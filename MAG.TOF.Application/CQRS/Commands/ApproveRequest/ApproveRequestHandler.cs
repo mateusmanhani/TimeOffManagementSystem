@@ -12,20 +12,20 @@ namespace MAG.TOF.Application.CQRS.Commands.ApproveRequest
     {
         private readonly ExternalDataValidator _externalDataValidator;
         private readonly IExternalDataCache _externalDataCache;
-        private readonly IEmailQueueService _emailQueueService;
+        private readonly IMessagePublisher _messagePublisher;
         private readonly IRequestRepository _repository;
         private readonly ILogger<ApproveRequestHandler> _logger;
 
         public ApproveRequestHandler(
             ExternalDataValidator externalDataValidator,
             IExternalDataCache externalDataCache,
-            IEmailQueueService emailQueueService,
+            IMessagePublisher emailQueueService,
             IRequestRepository repository,
             ILogger<ApproveRequestHandler> logger)
         {
             _externalDataValidator = externalDataValidator;
             _externalDataCache = externalDataCache;
-            _emailQueueService = emailQueueService;
+            _messagePublisher = emailQueueService;
             _repository = repository;
             _logger = logger;
         }
@@ -85,7 +85,7 @@ namespace MAG.TOF.Application.CQRS.Commands.ApproveRequest
                 await _repository.UpdateRequestAsync(existingRequest, cancellationToken);
                 _logger.LogInformation("Request {RequestId} approved by manager {ManagerId}", command.RequestId, command.LoggedUserId);
 
-                // Try to enqueue email notification (not blocking)
+                // Try to publish email notification
                 try
                 {
                     var users = await _externalDataCache.GetCachedUsersAsync();
@@ -94,13 +94,22 @@ namespace MAG.TOF.Application.CQRS.Commands.ApproveRequest
 
                     if (!string.IsNullOrEmpty(requestorEmail))
                     {
-                        var emailMsg = new EmailQueueMessage(
-                            RequestorEmail: requestorEmail,
-                            Subject: $"Your request #{existingRequest.Id} was approved",
-                            BodyHtml: $"<p>Hi {requestor?.FullName ?? "user"},</p><p>Your request #{existingRequest.Id} has been <strong>approved</strong>.</p>"
+
+                        var manager = users.FirstOrDefault(u => u.Id == command.LoggedUserId);
+                        var managerName = manager?.FullName ?? "Manager";
+
+                        var emailMsg = new EmailNotificationMessage(
+                            RecepientEmail: requestorEmail,
+                            Subject: "Approved",
+                            BodyHtml: $"<p>Hi {requestor?.FullName ?? "user"},</p>" +
+                                      $"<p>Your request <strong>#{existingRequest.Id}</strong> from <strong>{existingRequest.StartDate:yyyy-MM-dd}</strong> to <strong>{existingRequest.EndDate:yyyy-MM-dd}</strong> has been <strong>approved</strong>.</p>" +
+                                      $"<p>Manager: <strong>{managerName}</strong></p>",
+                            StartDate: existingRequest.StartDate,
+                            EndDate: existingRequest.EndDate,
+                            ManagerAssigned: managerName
                         );
 
-                        await _emailQueueService.EnqueueEmailAsync(emailMsg, cancellationToken);
+                        await _messagePublisher.PublishAsync(emailMsg, cancellationToken);
                         _logger.LogInformation("Enqueued approval email for request {RequestId} to requestor {RequestorUserId}", existingRequest.Id, existingRequest.UserId);
                     }
                 }
