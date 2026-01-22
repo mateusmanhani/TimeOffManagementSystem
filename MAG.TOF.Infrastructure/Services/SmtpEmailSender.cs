@@ -1,6 +1,7 @@
 ﻿using MAG.TOF.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Net;
 using System.Net.Mail;
 
 namespace MAG.TOF.Infrastructure.Services
@@ -14,16 +15,18 @@ namespace MAG.TOF.Infrastructure.Services
         private readonly int _port;
         private readonly string _user;
         private readonly string _pass;
-
+        private readonly int _timeoutMs;
         public SmtpEmailSender(IConfiguration config, ILogger<SmtpEmailSender> logger)
         {
             _config = config;
             _logger = logger;
             _host = _config["Smtp:Host"];
             _port = int.Parse(_config["Smtp:Port"] ?? "587");
-            _user = _config["Smtp:User"];
-            _pass = _config["Smtp:Password"];
-            _from = _config["Smtp:From"];
+            _user = _config["Smtp:User"] ?? string.Empty;
+            _pass = _config["Smtp:Password"] ?? string.Empty;
+            _from = _config["Smtp:From"] ?? throw new InvalidOperationException("Smtp: From not configured");
+
+            _timeoutMs = int.TryParse(_config["Smtp:TimeoutMs"], out var t) ? t : 100_000;
         }
         public async Task SendAsync(string to, string subject, string htmlBody, string? textBody = null, CancellationToken cancellationToken = default)
         {
@@ -43,18 +46,31 @@ namespace MAG.TOF.Infrastructure.Services
 
             using var client = new SmtpClient(_host, _port)
             {
-                Credentials = new System.Net.NetworkCredential(_user, _pass),
-                EnableSsl = true
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                EnableSsl = true, // typically true for modern SMTP servers
+                Credentials = string.IsNullOrEmpty(_user) ? null : new NetworkCredential(_user, _pass),
+                Timeout = _timeoutMs
             };
 
             try
             {
+                _logger.LogDebug("Sending email to {To} via SMTP host {Host}:{Port} (From: {From})", to, _host, _port, _from);
                 await client.SendMailAsync(msg, cancellationToken);
                 _logger.LogInformation("Email sent to {To} with subject {Subject}", to, subject);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Email send canceled for {To}", to);
+                throw;
+            }
+            catch (SmtpException ex)
+            {
+                _logger.LogError(ex, "SMTP error sending email to {To} (host {Host}:{Port})", to, _host, _port);
+                throw;
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send email to {To} with subject {Subject}", to, subject);
+                _logger.LogError(ex, "Unexpected error sending email to {To}", to);
                 throw;
             }
         }

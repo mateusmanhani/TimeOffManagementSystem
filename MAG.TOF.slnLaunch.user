@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "Functions\\MAG.TOF.Worker.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "MAG.TOF.Web\\MAG.TOF.Web.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
