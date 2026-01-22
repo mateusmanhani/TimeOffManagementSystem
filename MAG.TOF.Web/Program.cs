@@ -72,8 +72,6 @@ try
     // Register service bus and Topic publisher
     builder.Services.AddSingleton<IMessagePublisher, ServiceBusTopicPublisher>();
 
-    builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-
     // Register MudBlazor Services
     builder.Services.AddMudServices();
 

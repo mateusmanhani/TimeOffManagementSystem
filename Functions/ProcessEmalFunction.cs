@@ -46,12 +46,26 @@ namespace MAG.TOF.Worker
         {
             try
             {
-                // Deserialize the message
-                var email = JsonSerializer.Deserialize<EmailNotificationMessage>(messageBody);
-                if ( email == null) {
+                // Helpful debug log to inspect incoming payload shape for failing messages
+                _logger.LogDebug("Incoming message on {Subscription}: {MessageBody}", subscription, messageBody);
+
+                EmailNotificationMessage? email;
+                try
+                {
+                    email = JsonSerializer.Deserialize<EmailNotificationMessage>(messageBody);
+                }
+                catch (JsonException jex)
+                {
+                    _logger.LogError(jex, "Failed to deserialize message for subscription {Subscription}. Body: {MessageBody}", subscription, messageBody);
+                    throw;
+                }
+
+                if (email == null)
+                {
                     _logger.LogWarning("Invalid message on {Subscription}", subscription);
                     return;
                 }
+
 
                 // Send the email
                 await _emailSender.SendAsync(email.RecepientEmail, email.Subject, email.BodyHtml);

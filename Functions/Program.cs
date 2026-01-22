@@ -7,7 +7,7 @@ using Microsoft.Extensions.Hosting;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
-// regiser infrastructure email sender
+// regiser infrastructure email sender - MailKitEmailSender for local testing, NoOpEmailSender for production for now
 builder.Services.AddSingleton<IEmailSender, NoOpEmailSender>();
 
 builder.ConfigureFunctionsWebApplication();
